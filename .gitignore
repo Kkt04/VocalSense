@@ -6,3 +6,6 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+data/
+*.zip
+backend/ml/eda_plots/*.png

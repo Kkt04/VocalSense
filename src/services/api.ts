@@ -1,6 +1,7 @@
 /**
  * VocalSense API Client
- * Connects frontend with FastAPI backend for health checks, audio uploads, and speech-to-text transcription.
+ * Connects frontend with FastAPI backend for health checks, audio uploads,
+ * speech-to-text transcription, and speech emotion recognition (SER).
  */
 
 export interface HealthResponse {
@@ -59,6 +60,35 @@ export interface TranscriptionHealthResponse {
   model_loaded: boolean;
 }
 
+export interface VocalTraits {
+  pitch_mean_hz: number;
+  pitch_std_hz: number;
+  rms_energy: number;
+  spectral_centroid_hz: number;
+  pause_fraction: number;
+  duration_sec: number;
+}
+
+export interface EmotionPredictionResponse {
+  success: boolean;
+  emotion_label: string;
+  confidence: number;
+  probabilities: Record<string, number>;
+  vocal_traits: VocalTraits;
+  is_reliable: boolean;
+  interpretation_notice: string;
+  model_used: string;
+  processing_time_sec: number;
+}
+
+export interface EmotionHealthResponse {
+  status: string;
+  service: string;
+  model_loaded: boolean;
+  model_name: string;
+  classes: string[];
+}
+
 export interface ApiError {
   success: false;
   error: string;
@@ -104,6 +134,26 @@ export async function checkTranscriptionHealth(): Promise<{ online: boolean; dat
     return { online: true, data };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Transcription service unreachable';
+    return { online: false, error: message };
+  }
+}
+
+/**
+ * Check speech emotion recognition service health.
+ */
+export async function checkEmotionHealth(): Promise<{ online: boolean; data?: EmotionHealthResponse; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/emotion/health`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      return { online: false, error: `Emotion service health failed with status ${res.status}` };
+    }
+    const data: EmotionHealthResponse = await res.json();
+    return { online: true, data };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Emotion service unreachable';
     return { online: false, error: message };
   }
 }
@@ -174,6 +224,34 @@ export async function transcribeAudio(
   }
 
   return json as TranscriptionResponse;
+}
+
+/**
+ * Send audio to the emotion recognition endpoint to extract acoustic traits and predict emotion patterns.
+ */
+export async function predictEmotion(
+  audioData: Blob | File,
+  filename = 'recording.webm'
+): Promise<EmotionPredictionResponse> {
+  const formData = new FormData();
+  formData.append('file', audioData, filename);
+
+  const res = await fetch(`${API_BASE_URL}/api/v1/emotion/predict`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    const errorMsg =
+      typeof json.detail === 'object' && json.detail?.error
+        ? json.detail.error
+        : json.detail || json.error || `Emotion prediction failed with status ${res.status}`;
+    throw new Error(errorMsg);
+  }
+
+  return json as EmotionPredictionResponse;
 }
 
 export { API_BASE_URL };

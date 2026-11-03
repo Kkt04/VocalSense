@@ -6,6 +6,7 @@ from backend.app.config import settings
 from backend.app.api.routes_health import router as health_router
 from backend.app.api.routes_audio import router as audio_router
 from backend.app.api.v1.transcription import router as transcription_router
+from backend.app.api.v1.emotion import router as emotion_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,6 +55,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router, prefix="/api")
     app.include_router(audio_router, prefix="/api")
     app.include_router(transcription_router, prefix="/api/v1")
+    app.include_router(emotion_router, prefix="/api/v1")
 
     @app.get("/", tags=["Root"])
     async def root():

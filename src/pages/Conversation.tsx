@@ -11,8 +11,11 @@ import { useSimulatedAudio } from '../hooks/useSimulatedAudio';
 import {
   checkBackendHealth,
   checkTranscriptionHealth,
+  checkEmotionHealth,
   transcribeAudio,
+  predictEmotion,
   TranscriptionResponse,
+  EmotionPredictionResponse,
 } from '../services/api';
 
 type Phase = 'idle' | 'permission' | 'listening' | 'paused' | 'processing' | 'analysing' | 'responding' | 'error';
@@ -32,7 +35,7 @@ const STYLES: { id: StyleId; name: string; hint: string; reply: string }[] = [
     id: 'listen',
     name: 'Just listen',
     hint: 'Gentle acknowledgement and follow-up questions.',
-    reply: "That sounds like a lot to carry, especially when you've already put in the work. What does that uncertainty usually feel like when it shows up?",
+    reply: "That sounds like a lot to carry, especially when you've already put in the work. What does that thought usually sound like when it shows up?",
   },
   {
     id: 'think',
@@ -54,20 +57,13 @@ const STYLES: { id: StyleId; name: string; hint: string; reply: string }[] = [
   },
 ];
 
-const INSIGHTS = [
-  { label: 'Speaking pace', value: 'Within sample reference range', bg: 'bg-lav' },
-  { label: 'Pitch variation', value: 'Moderate variation observed', bg: 'bg-pink' },
-  { label: 'Pauses', value: 'Natural conversational cadence', bg: 'bg-sage' },
-  { label: 'Vocal energy', value: 'Calm and steady', bg: 'bg-peach' },
-];
-
 const STATUS: Record<Phase, string> = {
   idle: "Whenever you're ready.",
   permission: 'Allow microphone access to begin.',
   listening: "I'm listening. Take your time.",
   paused: 'Paused. Resume when you like.',
-  processing: 'Transcribing speech with Whisper...',
-  analysing: 'Analyzing speech container & traits...',
+  processing: 'Transcribing speech & extracting acoustic traits...',
+  analysing: 'Analyzing speech container & vocal patterns...',
   responding: "Here's something to think about.",
   error: 'Something went wrong.',
 };
@@ -92,9 +88,11 @@ export default function Conversation() {
   const [demoMode, setDemoMode] = useState(false);
   const [transcriptionNotice, setTranscriptionNotice] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-  const [modelStatus, setModelStatus] = useState<string>('');
+  const [sttModelName, setSttModelName] = useState<string>('');
+  const [emotionModelName, setEmotionModelName] = useState<string>('');
   const [customError, setCustomError] = useState<string | null>(null);
   const [lastAudioBlob, setLastAudioBlob] = useState<Blob | null>(null);
+  const [emotionData, setEmotionData] = useState<EmotionPredictionResponse | null>(null);
 
   const timers = useRef<number[]>([]);
   const later = useCallback((fn: () => void, ms: number) => {
@@ -114,22 +112,27 @@ export default function Conversation() {
   const isSimulatedActive = (demoMode && phase === 'listening') || speaking;
   const simulatedAudio = useSimulatedAudio(isSimulatedActive, 36);
 
-  // Check backend & Whisper model health
+  // Check backend, Whisper, and Emotion model health
   const checkHealth = useCallback(async () => {
     setBackendStatus('checking');
-    const [backRes, sttRes] = await Promise.all([
+    const [backRes, sttRes, emoRes] = await Promise.all([
       checkBackendHealth(),
       checkTranscriptionHealth(),
+      checkEmotionHealth(),
     ]);
 
     if (backRes.online) {
       setBackendStatus('online');
       if (sttRes.online && sttRes.data) {
-        setModelStatus(`${sttRes.data.model_size} (${sttRes.data.device})`);
+        setSttModelName(`Whisper ${sttRes.data.model_size}`);
+      }
+      if (emoRes.online && emoRes.data) {
+        setEmotionModelName(emoRes.data.model_name || 'SVM (RAVDESS)');
       }
     } else {
       setBackendStatus('offline');
-      setModelStatus('');
+      setSttModelName('');
+      setEmotionModelName('');
     }
   }, []);
 
@@ -202,20 +205,31 @@ export default function Conversation() {
   // Start demo simulation mode
   const beginListeningDemo = () => {
     setDemoMode(true);
-    setTranscriptionNotice('Running in Demo Mode (simulated speech & reply)');
+    setTranscriptionNotice('Running in Demo Mode (simulated speech & insights)');
     setCustomError(null);
     setPhase('listening');
   };
 
-  // Helper: process transcription response into conversation state
-  const handleTranscriptionResult = (res: TranscriptionResponse) => {
-    const transcriptText = res.transcript.trim() || "(No speech detected in recording)";
-    const langLabel = res.detected_language === 'hinglish' ? 'Hinglish' : res.detected_language.toUpperCase();
-    const confidencePct = Math.round(res.language_probability * 100);
+  // Process transcription & emotion response into conversation state
+  const handleTranscriptionAndEmotionResult = (
+    sttResult: TranscriptionResponse,
+    emoResult?: EmotionPredictionResponse | null
+  ) => {
+    const transcriptText = sttResult.transcript.trim() || "(No speech detected in recording)";
+    const langLabel = sttResult.detected_language === 'hinglish' ? 'Hinglish' : sttResult.detected_language.toUpperCase();
+    const confidencePct = Math.round(sttResult.language_probability * 100);
 
-    setTranscriptionNotice(
-      `✓ Transcribed in ${res.processing_time_sec}s · Language: ${langLabel} (${confidencePct}%)`
-    );
+    let notice = `✓ Transcribed in ${sttResult.processing_time_sec}s · Language: ${langLabel} (${confidencePct}%)`;
+    if (emoResult && emoResult.is_reliable) {
+      notice += ` · Vocal pattern: ${emoResult.emotion_label}-like (${Math.round(emoResult.confidence * 100)}%)`;
+    }
+
+    setTranscriptionNotice(notice);
+
+    if (emoResult) {
+      setEmotionData(emoResult);
+      setHasInsights(true);
+    }
 
     // Append user message with transcript
     setMsgs((m) => [
@@ -224,8 +238,8 @@ export default function Conversation() {
         id: Date.now(),
         role: 'user',
         text: transcriptText,
-        detectedLanguage: res.detected_language,
-        languageProb: res.language_probability,
+        detectedLanguage: sttResult.detected_language,
+        languageProb: sttResult.language_probability,
       },
     ]);
 
@@ -234,14 +248,13 @@ export default function Conversation() {
     const reply = STYLES.find((s) => s.id === style)!.reply;
     later(() => {
       setMsgs((m) => [...m, { id: Date.now() + 1, role: 'ai', text: reply }]);
-      setHasInsights(true);
       setProgress(0);
       setPaused(false);
       setPhase('responding');
     }, 1800);
   };
 
-  // Stop recording and transcribe
+  // Stop recording and process with both Whisper STT and Emotion SER
   const stop = async () => {
     setPhase('processing');
 
@@ -257,13 +270,31 @@ export default function Conversation() {
             languageProb: 0.94,
           },
         ]);
+        setHasInsights(true);
+        setEmotionData({
+          success: true,
+          emotion_label: 'calm',
+          confidence: 0.62,
+          probabilities: { calm: 0.62, sad: 0.18, neutral: 0.12, happy: 0.08 },
+          vocal_traits: {
+            pitch_mean_hz: 185.4,
+            pitch_std_hz: 22.8,
+            rms_energy: 0.048,
+            spectral_centroid_hz: 1740.0,
+            pause_fraction: 0.18,
+            duration_sec: 4.2,
+          },
+          is_reliable: true,
+          interpretation_notice: "Identifies measurable acoustic patterns in voice.",
+          model_used: "Support Vector Machine (RAVDESS)",
+          processing_time_sec: 0.08,
+        });
         setPhase('analysing');
       }, 1200);
 
       const reply = STYLES.find((s) => s.id === style)!.reply;
       later(() => {
         setMsgs((m) => [...m, { id: Date.now() + 1, role: 'ai', text: reply }]);
-        setHasInsights(true);
         setProgress(0);
         setPaused(false);
         setPhase('responding');
@@ -277,16 +308,27 @@ export default function Conversation() {
     if (blob) {
       setLastAudioBlob(blob);
       try {
-        setTranscriptionNotice('Transcribing audio with Whisper...');
-        const result = await transcribeAudio(
-          blob,
-          `recording.${blob.type.includes('wav') ? 'wav' : 'webm'}`,
-          languagePreference === 'auto' ? undefined : languagePreference
-        );
-        handleTranscriptionResult(result);
+        setTranscriptionNotice('Analyzing audio: transcribing words and measuring acoustic patterns...');
+
+        const filename = `recording.${blob.type.includes('wav') ? 'wav' : 'webm'}`;
+
+        // Execute STT and SER in parallel
+        const [sttOutcome, emoOutcome] = await Promise.allSettled([
+          transcribeAudio(blob, filename, languagePreference === 'auto' ? undefined : languagePreference),
+          predictEmotion(blob, filename),
+        ]);
+
+        if (sttOutcome.status === 'fulfilled') {
+          const emoResult = emoOutcome.status === 'fulfilled' ? emoOutcome.value : null;
+          handleTranscriptionAndEmotionResult(sttOutcome.value, emoResult);
+        } else {
+          const errorMsg = sttOutcome.reason?.message || 'Transcription failed';
+          setCustomError(`Speech recognition failed: ${errorMsg}`);
+          setPhase('error');
+        }
       } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : 'Transcription failed';
-        setCustomError(`Speech recognition failed: ${errorMsg}`);
+        const errorMsg = err instanceof Error ? err.message : 'Processing failed';
+        setCustomError(`Processing error: ${errorMsg}`);
         setPhase('error');
       }
     } else {
@@ -295,7 +337,7 @@ export default function Conversation() {
     }
   };
 
-  // Retry transcription using last captured audio blob
+  // Retry transcription & emotion analysis
   const retryTranscription = async () => {
     if (!lastAudioBlob) {
       retry();
@@ -304,16 +346,22 @@ export default function Conversation() {
     setPhase('processing');
     setCustomError(null);
     try {
-      setTranscriptionNotice('Retrying transcription with Whisper...');
-      const result = await transcribeAudio(
-        lastAudioBlob,
-        'recording.webm',
-        languagePreference === 'auto' ? undefined : languagePreference
-      );
-      handleTranscriptionResult(result);
+      setTranscriptionNotice('Retrying speech and emotion analysis...');
+      const [sttOutcome, emoOutcome] = await Promise.allSettled([
+        transcribeAudio(lastAudioBlob, 'recording.webm', languagePreference === 'auto' ? undefined : languagePreference),
+        predictEmotion(lastAudioBlob, 'recording.webm'),
+      ]);
+
+      if (sttOutcome.status === 'fulfilled') {
+        const emoResult = emoOutcome.status === 'fulfilled' ? emoOutcome.value : null;
+        handleTranscriptionAndEmotionResult(sttOutcome.value, emoResult);
+      } else {
+        setCustomError('Retry failed to transcribe audio.');
+        setPhase('error');
+      }
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Retry failed';
-      setCustomError(`Speech recognition failed: ${errorMsg}`);
+      setCustomError(`Processing error: ${errorMsg}`);
       setPhase('error');
     }
   };
@@ -322,6 +370,7 @@ export default function Conversation() {
   const clearTranscript = () => {
     setMsgs([]);
     setHasInsights(false);
+    setEmotionData(null);
     setTranscriptionNotice('Transcript cleared.');
   };
 
@@ -376,7 +425,7 @@ export default function Conversation() {
             />
             <span className="text-muted text-[11px]">
               {backendStatus === 'online'
-                ? `Whisper ${modelStatus || 'Ready'}`
+                ? `${sttModelName || 'STT Ready'} · ${emotionModelName || 'SER Ready'}`
                 : backendStatus === 'checking'
                 ? 'Checking backend...'
                 : 'Backend Offline'}
@@ -397,7 +446,7 @@ export default function Conversation() {
                     ? 'bg-accent text-onaccent shadow-xs'
                     : 'text-muted hover:text-ink'
                 }`}
-                title={`Transcription language: ${l === 'auto' ? 'Auto-Detect (EN/HI/Hinglish)' : l === 'en' ? 'English' : 'Hindi'}`}
+                title={`Language: ${l === 'auto' ? 'Auto-Detect (EN/HI/Hinglish)' : l === 'en' ? 'English' : 'Hindi'}`}
               >
                 {l === 'auto' ? 'Auto' : l === 'en' ? 'EN' : 'HI'}
               </button>
@@ -408,7 +457,7 @@ export default function Conversation() {
             type="button"
             className="btn btn-ghost !py-2 text-xs"
             onClick={() => setShowUploader((u) => !u)}
-            title="Upload audio file for transcription"
+            title="Upload audio file for transcription & emotion analysis"
           >
             <Icon name="mic" size={14} />
             {showUploader ? 'Hide Upload' : 'Upload File'}
@@ -450,7 +499,18 @@ export default function Conversation() {
             className="mx-auto w-full max-w-6xl px-5 mb-5 overflow-hidden"
           >
             <AudioUploader
-              onTranscriptionSuccess={handleTranscriptionResult}
+              onTranscriptionSuccess={async (sttRes) => {
+                // Also infer emotion
+                let emoRes: EmotionPredictionResponse | null = null;
+                try {
+                  if (lastAudioBlob) {
+                    emoRes = await predictEmotion(lastAudioBlob);
+                  }
+                } catch {
+                  // Ignore emotion failure
+                }
+                handleTranscriptionAndEmotionResult(sttRes, emoRes);
+              }}
               onCancel={() => setShowUploader(false)}
             />
           </motion.div>
@@ -498,8 +558,7 @@ export default function Conversation() {
             {phase === 'permission' && (
               <div className="max-w-sm rounded-2xl bg-lav p-5 text-center">
                 <p className="text-sm leading-relaxed">
-                  VocalSense uses your microphone to transcribe your speech (English, Hindi, Hinglish) using Whisper.
-                  Audio is processed ephemerally with zero permanent storage by default.
+                  VocalSense listens to your words (Whisper STT) and measurable vocal traits (pitch, energy, pauses) with zero raw retention by default.
                 </p>
                 <div className="mt-4 flex flex-col sm:flex-row justify-center gap-2">
                   <button className="btn btn-primary text-xs" onClick={beginListeningReal}>
@@ -557,7 +616,7 @@ export default function Conversation() {
 
                 <button className="btn btn-primary" onClick={stop}>
                   <Icon name="stop" size={18} />
-                  Stop & Transcribe
+                  Stop & Process
                 </button>
 
                 <button
@@ -576,7 +635,7 @@ export default function Conversation() {
             {busy && (
               <div className="flex items-center gap-2 text-sm text-muted">
                 <span className="h-2 w-2 rounded-full bg-accent animate-ping" />
-                <span>Running speech recognition inference...</span>
+                <span>Running speech recognition & acoustic pattern analysis...</span>
               </div>
             )}
 
@@ -596,7 +655,7 @@ export default function Conversation() {
                   {lastAudioBlob && (
                     <button className="btn btn-primary text-xs" onClick={retryTranscription}>
                       <Icon name="replay" size={16} />
-                      Retry Transcription
+                      Retry Analysis
                     </button>
                   )}
                   <button className="btn btn-soft text-xs" onClick={retry}>
@@ -619,7 +678,7 @@ export default function Conversation() {
               <button
                 className="underline underline-offset-4 hover:text-ink"
                 onClick={() => {
-                  setCustomError('Previewing simulated speech recognition error state.');
+                  setCustomError('Previewing simulated speech error state.');
                   setPhase('error');
                 }}
               >
@@ -831,28 +890,73 @@ export default function Conversation() {
               </label>
             </div>
 
+            {/* Speech Insights Panel (Actual Acoustic Measurements + Emotion Patterns) */}
             {showInsights && (
               <div className="mt-5 border-t border-ink/10 pt-5">
-                {!hasInsights ? (
-                  <p className="text-sm text-muted">Record or upload speech to preview acoustic insights.</p>
+                {!hasInsights || !emotionData ? (
+                  <p className="text-sm text-muted">Record or upload speech to analyze acoustic features and vocal patterns.</p>
                 ) : (
                   <>
                     <p className="mb-3 text-xs text-muted">
-                      Measurable acoustic speech traits (preview mode). Values are strictly non-diagnostic.
+                      Measurable physical acoustic traits from your recording. Values reflect acoustic measurements, not psychological diagnoses.
                     </p>
                     <dl className="grid gap-2 sm:grid-cols-2">
-                      {INSIGHTS.map((i) => (
-                        <div key={i.label} className={`rounded-2xl p-3 ${i.bg}`}>
-                          <dt className="text-xs font-medium text-ink/70">{i.label}</dt>
-                          <dd className="text-sm">{i.value}</dd>
-                        </div>
-                      ))}
+                      <div className="rounded-2xl p-3 bg-lav">
+                        <dt className="text-xs font-medium text-ink/70">Pitch Variation (F0)</dt>
+                        <dd className="text-sm font-medium">
+                          {emotionData.vocal_traits.pitch_mean_hz > 0
+                            ? `${emotionData.vocal_traits.pitch_mean_hz} Hz (±${emotionData.vocal_traits.pitch_std_hz} Hz)`
+                            : 'Unvoiced / Whisper'}
+                        </dd>
+                      </div>
+
+                      <div className="rounded-2xl p-3 bg-pink">
+                        <dt className="text-xs font-medium text-ink/70">Vocal Energy (RMS)</dt>
+                        <dd className="text-sm font-medium">
+                          RMS {emotionData.vocal_traits.rms_energy} · {emotionData.vocal_traits.rms_energy > 0.08 ? 'Higher' : emotionData.vocal_traits.rms_energy < 0.03 ? 'Soft' : 'Moderate'}
+                        </dd>
+                      </div>
+
+                      <div className="rounded-2xl p-3 bg-sage">
+                        <dt className="text-xs font-medium text-ink/70">Pauses & Cadence</dt>
+                        <dd className="text-sm font-medium">
+                          {emotionData.vocal_traits.duration_sec}s audio · {Math.round(emotionData.vocal_traits.pause_fraction * 100)}% silence
+                        </dd>
+                      </div>
+
+                      <div className="rounded-2xl p-3 bg-peach">
+                        <dt className="text-xs font-medium text-ink/70">Spectral Centroid</dt>
+                        <dd className="text-sm font-medium">
+                          {Math.round(emotionData.vocal_traits.spectral_centroid_hz)} Hz frequency center
+                        </dd>
+                      </div>
                     </dl>
-                    <p className="mt-3 rounded-2xl border border-ink/10 p-3 text-sm">
-                      <span className="font-medium">Model estimate: </span>Unable to estimate reliably from this recording.
-                    </p>
-                    <p className="mt-2 text-xs text-muted">
-                      These are measurable acoustic signals, not claims about emotional states. Your stated words always take precedence.
+
+                    <div className="mt-3 rounded-2xl border border-ink/10 p-3.5 bg-surface text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-muted">Model: {emotionData.model_used}</span>
+                        {emotionData.is_reliable && (
+                          <span className="chip !text-[10px] !py-0.5 !px-2 uppercase">
+                            {Math.round(emotionData.confidence * 100)}% confidence
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1">
+                        <span className="font-semibold">Vocal Pattern Estimate: </span>
+                        {emotionData.is_reliable ? (
+                          <span className="capitalize font-medium text-accent">
+                            {emotionData.emotion_label}-like acoustic pattern
+                          </span>
+                        ) : (
+                          <span className="italic text-muted">
+                            Unable to estimate vocal emotion reliably.
+                          </span>
+                        )}
+                      </p>
+                    </div>
+
+                    <p className="mt-2 text-xs text-muted leading-relaxed">
+                      {emotionData.interpretation_notice || "These are measurable acoustic signals in your voice, not statements about your actual feelings. Your own words always come first."}
                     </p>
                   </>
                 )}
