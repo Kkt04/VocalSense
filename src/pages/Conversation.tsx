@@ -8,46 +8,57 @@ import Waveform from '../components/Waveform';
 import AudioUploader from '../components/AudioUploader';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { useSimulatedAudio } from '../hooks/useSimulatedAudio';
-import { checkBackendHealth, uploadAudio, AudioUploadResponse } from '../services/api';
+import {
+  checkBackendHealth,
+  checkTranscriptionHealth,
+  transcribeAudio,
+  TranscriptionResponse,
+} from '../services/api';
 
 type Phase = 'idle' | 'permission' | 'listening' | 'paused' | 'processing' | 'analysing' | 'responding' | 'error';
 type StyleId = 'listen' | 'think' | 'practical' | 'distract';
-type Msg = { id: number; role: 'user' | 'ai'; text: string };
+type Msg = {
+  id: number;
+  role: 'user' | 'ai';
+  text: string;
+  isEdited?: boolean;
+  detectedLanguage?: string;
+  languageProb?: number;
+};
 
-/* ---------- MOCK DATA for Phase 1 dialogue and insights preview ---------- */
-const MOCK_TRANSCRIPT = "I'm honestly worried about my placement. I have prepared, but I keep thinking what if I mess up?";
+/* ---------- CONVERSATION STYLES ---------- */
 const STYLES: { id: StyleId; name: string; hint: string; reply: string }[] = [
   {
     id: 'listen',
     name: 'Just listen',
     hint: 'Gentle acknowledgement and follow-up questions.',
-    reply: "That sounds like a lot to carry, especially when you've already put in the work. What does the 'what if I mess up' thought usually sound like when it shows up?",
+    reply: "That sounds like a lot to carry, especially when you've already put in the work. What does that uncertainty usually feel like when it shows up?",
   },
   {
     id: 'think',
     name: 'Help me think',
     hint: 'Organise thoughts and explore perspectives.',
-    reply: "Let's separate two things: what you've prepared, and what you can't control. Which part of the process feels most uncertain right now?",
+    reply: "Let's separate two things: what you've prepared, and what you can't control. Which specific part feels most uncertain right now?",
   },
   {
     id: 'practical',
     name: 'Practical suggestions',
     hint: 'Clear, actionable steps.',
-    reply: "Here are three small steps. 1) Do one timed mock interview this week. 2) Write a one-minute story for each of your strongest projects. 3) Plan a short routine for the night before. Want me to turn this into a schedule?",
+    reply: "Here are three small steps. 1) Do one timed practice round today. 2) Outline a one-minute story for your strongest experience. 3) Plan a calming routine for the evening before.",
   },
   {
     id: 'distract',
     name: 'Distract me',
     hint: 'Light topics and simple activities.',
-    reply: "Let's take a short break from placements. Quick one: if you could instantly learn any skill that has nothing to do with computers, what would it be?",
+    reply: "Let's take a short pause from deadlines. Quick question: if you could instantly master any creative skill, what would it be?",
   },
 ];
 
 const INSIGHTS = [
-  { label: 'Speaking pace', value: 'Higher than reference range', bg: 'bg-lav' },
-  { label: 'Pitch variation', value: 'Within sample reference range', bg: 'bg-pink' },
-  { label: 'Pauses', value: '4 pauses, longest 1.2 s', bg: 'bg-sage' },
-  { label: 'Vocal energy', value: 'Slightly higher than reference', bg: 'bg-peach' },
+  { label: 'Speaking pace', value: 'Within sample reference range', bg: 'bg-lav' },
+  { label: 'Pitch variation', value: 'Moderate variation observed', bg: 'bg-pink' },
+  { label: 'Pauses', value: 'Natural conversational cadence', bg: 'bg-sage' },
+  { label: 'Vocal energy', value: 'Calm and steady', bg: 'bg-peach' },
 ];
 
 const STATUS: Record<Phase, string> = {
@@ -55,7 +66,7 @@ const STATUS: Record<Phase, string> = {
   permission: 'Allow microphone access to begin.',
   listening: "I'm listening. Take your time.",
   paused: 'Paused. Resume when you like.',
-  processing: 'Sending audio to backend & processing...',
+  processing: 'Transcribing speech with Whisper...',
   analysing: 'Analyzing speech container & traits...',
   responding: "Here's something to think about.",
   error: 'Something went wrong.',
@@ -67,6 +78,7 @@ export default function Conversation() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [style, setStyle] = useState<StyleId>('listen');
   const [mode, setMode] = useState<'voice' | 'text'>('voice');
+  const [languagePreference, setLanguagePreference] = useState<'auto' | 'en' | 'hi'>('auto');
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [editing, setEditing] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
@@ -78,9 +90,11 @@ export default function Conversation() {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showUploader, setShowUploader] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
-  const [uploadNotice, setUploadNotice] = useState<string | null>(null);
+  const [transcriptionNotice, setTranscriptionNotice] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [modelStatus, setModelStatus] = useState<string>('');
   const [customError, setCustomError] = useState<string | null>(null);
+  const [lastAudioBlob, setLastAudioBlob] = useState<Blob | null>(null);
 
   const timers = useRef<number[]>([]);
   const later = useCallback((fn: () => void, ms: number) => {
@@ -100,18 +114,30 @@ export default function Conversation() {
   const isSimulatedActive = (demoMode && phase === 'listening') || speaking;
   const simulatedAudio = useSimulatedAudio(isSimulatedActive, 36);
 
-  // Check backend health on mount and periodically
-  const pingBackend = useCallback(async () => {
+  // Check backend & Whisper model health
+  const checkHealth = useCallback(async () => {
     setBackendStatus('checking');
-    const res = await checkBackendHealth();
-    setBackendStatus(res.online ? 'online' : 'offline');
+    const [backRes, sttRes] = await Promise.all([
+      checkBackendHealth(),
+      checkTranscriptionHealth(),
+    ]);
+
+    if (backRes.online) {
+      setBackendStatus('online');
+      if (sttRes.online && sttRes.data) {
+        setModelStatus(`${sttRes.data.model_size} (${sttRes.data.device})`);
+      }
+    } else {
+      setBackendStatus('offline');
+      setModelStatus('');
+    }
   }, []);
 
   useEffect(() => {
-    pingBackend();
-  }, [pingBackend]);
+    checkHealth();
+  }, [checkHealth]);
 
-  // Derive current audio visualizer bars and level
+  // Audio visualizer bars and level
   const isListeningReal = !demoMode && (phase === 'listening' || recorder.state === 'listening');
   const bars = isListeningReal
     ? recorder.bars
@@ -134,7 +160,7 @@ export default function Conversation() {
       ? 'thinking'
       : 'idle';
 
-  // Handle errors from the real recorder
+  // Handle recorder error
   useEffect(() => {
     if (recorder.errorMessage) {
       setCustomError(recorder.errorMessage);
@@ -142,7 +168,7 @@ export default function Conversation() {
     }
   }, [recorder.errorMessage]);
 
-  // Simulated AI response playback or text display progression
+  // AI playback progression
   useEffect(() => {
     if (phase !== 'responding') return;
     if (mode === 'text') {
@@ -160,10 +186,10 @@ export default function Conversation() {
     }
   }, [progress, phase, mode]);
 
-  // Start real recording flow
+  // Start real recording
   const beginListeningReal = async () => {
     setDemoMode(false);
-    setUploadNotice(null);
+    setTranscriptionNotice(null);
     setCustomError(null);
     const ok = await recorder.startRecording();
     if (ok) {
@@ -173,25 +199,68 @@ export default function Conversation() {
     }
   };
 
-  // Start demo simulation mode (no microphone needed)
+  // Start demo simulation mode
   const beginListeningDemo = () => {
     setDemoMode(true);
-    setUploadNotice('Running in Simulated Demo Mode (no microphone)');
+    setTranscriptionNotice('Running in Demo Mode (simulated speech & reply)');
     setCustomError(null);
     setPhase('listening');
   };
 
-  // Handle Stop Recording & Upload
-  const stop = async () => {
+  // Helper: process transcription response into conversation state
+  const handleTranscriptionResult = (res: TranscriptionResponse) => {
+    const transcriptText = res.transcript.trim() || "(No speech detected in recording)";
+    const langLabel = res.detected_language === 'hinglish' ? 'Hinglish' : res.detected_language.toUpperCase();
+    const confidencePct = Math.round(res.language_probability * 100);
+
+    setTranscriptionNotice(
+      `✓ Transcribed in ${res.processing_time_sec}s · Language: ${langLabel} (${confidencePct}%)`
+    );
+
+    // Append user message with transcript
+    setMsgs((m) => [
+      ...m,
+      {
+        id: Date.now(),
+        role: 'user',
+        text: transcriptText,
+        detectedLanguage: res.detected_language,
+        languageProb: res.language_probability,
+      },
+    ]);
+
+    setPhase('analysing');
+
     const reply = STYLES.find((s) => s.id === style)!.reply;
+    later(() => {
+      setMsgs((m) => [...m, { id: Date.now() + 1, role: 'ai', text: reply }]);
+      setHasInsights(true);
+      setProgress(0);
+      setPaused(false);
+      setPhase('responding');
+    }, 1800);
+  };
+
+  // Stop recording and transcribe
+  const stop = async () => {
     setPhase('processing');
 
     if (demoMode) {
-      // Demo mode simulated progression
       later(() => {
-        setMsgs((m) => [...m, { id: Date.now(), role: 'user', text: MOCK_TRANSCRIPT }]);
+        setMsgs((m) => [
+          ...m,
+          {
+            id: Date.now(),
+            role: 'user',
+            text: "Yaar, mujhe kal presentation complete karna hai, lekin thoda stress lag raha hai.",
+            detectedLanguage: 'hinglish',
+            languageProb: 0.94,
+          },
+        ]);
         setPhase('analysing');
       }, 1200);
+
+      const reply = STYLES.find((s) => s.id === style)!.reply;
       later(() => {
         setMsgs((m) => [...m, { id: Date.now() + 1, role: 'ai', text: reply }]);
         setHasInsights(true);
@@ -202,74 +271,65 @@ export default function Conversation() {
       return;
     }
 
-    // Real audio recording stop
+    // Stop real recording
     const blob = await recorder.stopRecording();
 
     if (blob) {
+      setLastAudioBlob(blob);
       try {
-        setUploadNotice('Uploading audio to backend...');
-        const uploadResult: AudioUploadResponse = await uploadAudio(
+        setTranscriptionNotice('Transcribing audio with Whisper...');
+        const result = await transcribeAudio(
           blob,
-          `recording.${blob.type.includes('wav') ? 'wav' : 'webm'}`
+          `recording.${blob.type.includes('wav') ? 'wav' : 'webm'}`,
+          languagePreference === 'auto' ? undefined : languagePreference
         );
-
-        setUploadNotice(
-          `✓ Audio received (${uploadResult.audio.size_kb} KB, ${uploadResult.audio.format_detected.toUpperCase()}) · Validated by backend`
-        );
+        handleTranscriptionResult(result);
       } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : 'Backend upload error';
-        setUploadNotice(`Upload warning: ${errorMsg}. (Backend offline, proceeding in local mode)`);
+        const errorMsg = err instanceof Error ? err.message : 'Transcription failed';
+        setCustomError(`Speech recognition failed: ${errorMsg}`);
+        setPhase('error');
       }
+    } else {
+      setCustomError('No audio data was captured.');
+      setPhase('error');
     }
-
-    // Progress conversation
-    later(() => {
-      setMsgs((m) => [...m, { id: Date.now(), role: 'user', text: MOCK_TRANSCRIPT }]);
-      setPhase('analysing');
-    }, 1200);
-
-    later(() => {
-      setMsgs((m) => [...m, { id: Date.now() + 1, role: 'ai', text: reply }]);
-      setHasInsights(true);
-      setProgress(0);
-      setPaused(false);
-      setPhase('responding');
-    }, 2600);
   };
 
-  // Callback when user uploads an audio file via the uploader
-  const handleUploadedAudio = (response: AudioUploadResponse) => {
-    setShowUploader(false);
-    setUploadNotice(`✓ Uploaded ${response.audio.filename} (${response.audio.size_kb} KB) successfully`);
+  // Retry transcription using last captured audio blob
+  const retryTranscription = async () => {
+    if (!lastAudioBlob) {
+      retry();
+      return;
+    }
     setPhase('processing');
+    setCustomError(null);
+    try {
+      setTranscriptionNotice('Retrying transcription with Whisper...');
+      const result = await transcribeAudio(
+        lastAudioBlob,
+        'recording.webm',
+        languagePreference === 'auto' ? undefined : languagePreference
+      );
+      handleTranscriptionResult(result);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Retry failed';
+      setCustomError(`Speech recognition failed: ${errorMsg}`);
+      setPhase('error');
+    }
+  };
 
-    const reply = STYLES.find((s) => s.id === style)!.reply;
-    later(() => {
-      setMsgs((m) => [
-        ...m,
-        {
-          id: Date.now(),
-          role: 'user',
-          text: `[Audio File: ${response.audio.filename}] ${MOCK_TRANSCRIPT}`,
-        },
-      ]);
-      setPhase('analysing');
-    }, 1000);
-
-    later(() => {
-      setMsgs((m) => [...m, { id: Date.now() + 1, role: 'ai', text: reply }]);
-      setHasInsights(true);
-      setProgress(0);
-      setPaused(false);
-      setPhase('responding');
-    }, 2400);
+  // Clear all messages
+  const clearTranscript = () => {
+    setMsgs([]);
+    setHasInsights(false);
+    setTranscriptionNotice('Transcript cleared.');
   };
 
   const retry = () => {
     clearTimers();
     recorder.clearError();
     setCustomError(null);
-    setUploadNotice(null);
+    setTranscriptionNotice(null);
     setPhase('idle');
   };
 
@@ -302,7 +362,7 @@ export default function Conversation() {
           {/* Backend Status indicator */}
           <div
             className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border border-ink/10 cursor-pointer"
-            onClick={pingBackend}
+            onClick={checkHealth}
             title="Click to re-check backend connection"
           >
             <span
@@ -315,20 +375,43 @@ export default function Conversation() {
               }`}
             />
             <span className="text-muted text-[11px]">
-              {backendStatus === 'online' ? 'Backend Connected' : backendStatus === 'checking' ? 'Checking...' : 'Backend Offline'}
+              {backendStatus === 'online'
+                ? `Whisper ${modelStatus || 'Ready'}`
+                : backendStatus === 'checking'
+                ? 'Checking backend...'
+                : 'Backend Offline'}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Language selector */}
+          <div className="inline-flex rounded-full bg-ink/5 p-0.5 text-xs">
+            {(['auto', 'en', 'hi'] as const).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLanguagePreference(l)}
+                className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
+                  languagePreference === l
+                    ? 'bg-accent text-onaccent shadow-xs'
+                    : 'text-muted hover:text-ink'
+                }`}
+                title={`Transcription language: ${l === 'auto' ? 'Auto-Detect (EN/HI/Hinglish)' : l === 'en' ? 'English' : 'Hindi'}`}
+              >
+                {l === 'auto' ? 'Auto' : l === 'en' ? 'EN' : 'HI'}
+              </button>
+            ))}
+          </div>
+
           <button
             type="button"
             className="btn btn-ghost !py-2 text-xs"
             onClick={() => setShowUploader((u) => !u)}
-            title="Upload pre-recorded audio file"
+            title="Upload audio file for transcription"
           >
             <Icon name="mic" size={14} />
-            {showUploader ? 'Hide Uploader' : 'Upload File'}
+            {showUploader ? 'Hide Upload' : 'Upload File'}
           </button>
           <ThemeToggle />
           {confirmEnd ? (
@@ -348,16 +431,16 @@ export default function Conversation() {
         </div>
       </header>
 
-      {/* Upload Notification Banner */}
-      {uploadNotice && (
+      {/* Notice Banner */}
+      {transcriptionNotice && (
         <div className="mx-auto mb-2 w-full max-w-6xl px-5">
           <span className="chip !text-[11px] !bg-lav border border-accent/20">
-            {uploadNotice}
+            {transcriptionNotice}
           </span>
         </div>
       )}
 
-      {/* File Uploader Drawer/Panel */}
+      {/* File Uploader Drawer */}
       <AnimatePresence>
         {showUploader && (
           <motion.div
@@ -367,7 +450,7 @@ export default function Conversation() {
             className="mx-auto w-full max-w-6xl px-5 mb-5 overflow-hidden"
           >
             <AudioUploader
-              onUploadSuccess={handleUploadedAudio}
+              onTranscriptionSuccess={handleTranscriptionResult}
               onCancel={() => setShowUploader(false)}
             />
           </motion.div>
@@ -415,7 +498,8 @@ export default function Conversation() {
             {phase === 'permission' && (
               <div className="max-w-sm rounded-2xl bg-lav p-5 text-center">
                 <p className="text-sm leading-relaxed">
-                  VocalSense needs access to your microphone to capture your speech and analyze acoustic characteristics. Raw audio is processed with zero-retention by default.
+                  VocalSense uses your microphone to transcribe your speech (English, Hindi, Hinglish) using Whisper.
+                  Audio is processed ephemerally with zero permanent storage by default.
                 </p>
                 <div className="mt-4 flex flex-col sm:flex-row justify-center gap-2">
                   <button className="btn btn-primary text-xs" onClick={beginListeningReal}>
@@ -473,7 +557,7 @@ export default function Conversation() {
 
                 <button className="btn btn-primary" onClick={stop}>
                   <Icon name="stop" size={18} />
-                  Stop & Process
+                  Stop & Transcribe
                 </button>
 
                 <button
@@ -489,7 +573,12 @@ export default function Conversation() {
               </div>
             )}
 
-            {busy && <p className="text-sm text-muted">This usually takes a few seconds.</p>}
+            {busy && (
+              <div className="flex items-center gap-2 text-sm text-muted">
+                <span className="h-2 w-2 rounded-full bg-accent animate-ping" />
+                <span>Running speech recognition inference...</span>
+              </div>
+            )}
 
             {phase === 'responding' && mode === 'voice' && (
               <button className="btn btn-ghost" onClick={stopPlayback}>
@@ -501,15 +590,17 @@ export default function Conversation() {
             {phase === 'error' && (
               <div className="max-w-sm rounded-2xl bg-pink p-5 text-center">
                 <p className="text-sm leading-relaxed text-ink">
-                  {customError || "We couldn't access or process your speech. Please check your microphone permissions and connection, then try again."}
+                  {customError || "Speech processing encountered an error. Please verify your connection or microphone and try again."}
                 </p>
                 <div className="mt-4 flex justify-center gap-2">
-                  <button className="btn btn-primary" onClick={retry}>
-                    <Icon name="replay" size={18} />
-                    Try again
-                  </button>
-                  <button className="btn btn-soft" onClick={beginListeningDemo}>
-                    Use Demo Mode
+                  {lastAudioBlob && (
+                    <button className="btn btn-primary text-xs" onClick={retryTranscription}>
+                      <Icon name="replay" size={16} />
+                      Retry Transcription
+                    </button>
+                  )}
+                  <button className="btn btn-soft text-xs" onClick={retry}>
+                    New Recording
                   </button>
                 </div>
               </div>
@@ -528,7 +619,7 @@ export default function Conversation() {
               <button
                 className="underline underline-offset-4 hover:text-ink"
                 onClick={() => {
-                  setCustomError('Previewing simulated microphone error state.');
+                  setCustomError('Previewing simulated speech recognition error state.');
                   setPhase('error');
                 }}
               >
@@ -541,12 +632,23 @@ export default function Conversation() {
         {/* Conversation Transcript & Controls */}
         <div className="flex flex-col gap-5">
           <section className="card flex min-h-[18rem] flex-1 flex-col p-6" aria-label="Conversation">
-            <h2 className="font-serif text-xl">Conversation</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-xl">Conversation</h2>
+              {msgs.length > 0 && (
+                <button
+                  type="button"
+                  className="text-xs text-muted hover:text-ink underline underline-offset-2"
+                  onClick={clearTranscript}
+                >
+                  Clear transcript
+                </button>
+              )}
+            </div>
 
             <div className="mt-4 flex flex-1 flex-col gap-3 overflow-y-auto" aria-live="polite">
               {msgs.length === 0 && (
                 <div className="grid flex-1 place-items-center rounded-2xl border border-dashed border-ink/15 p-6 text-center text-sm text-muted">
-                  Your words will appear here as text. Press Start talking or Upload File to begin.
+                  Speak in English, Hindi, or Hinglish. Your words will be transcribed by Whisper and displayed here.
                 </div>
               )}
 
@@ -560,12 +662,17 @@ export default function Conversation() {
                       m.role === 'user' ? 'self-end bg-lav' : 'self-start bg-peach'
                     }`}
                   >
-                    <p className="mb-1 text-xs font-medium text-muted">
-                      {m.role === 'user' ? 'You' : 'VocalSense'}
-                    </p>
+                    <div className="mb-1 flex items-center justify-between gap-2 text-xs font-medium text-muted">
+                      <span>{m.role === 'user' ? 'You' : 'VocalSense'}</span>
+                      {m.role === 'user' && m.detectedLanguage && (
+                        <span className="chip !text-[10px] !py-0.5 !px-2 uppercase tracking-wider">
+                          {m.detectedLanguage} {m.languageProb ? `· ${Math.round(m.languageProb * 100)}%` : ''}
+                        </span>
+                      )}
+                    </div>
 
                     {editing === m.id ? (
-                      <div>
+                      <div className="mt-1">
                         <textarea
                           className="w-full rounded-xl border border-ink/20 bg-surface p-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                           rows={3}
@@ -575,18 +682,20 @@ export default function Conversation() {
                         />
                         <div className="mt-2 flex gap-2">
                           <button
-                            className="btn btn-primary !px-4 !py-1.5"
+                            className="btn btn-primary !px-4 !py-1 text-xs"
                             onClick={() => {
                               setMsgs((all) =>
-                                all.map((x) => (x.id === m.id ? { ...x, text: draft } : x))
+                                all.map((x) =>
+                                  x.id === m.id ? { ...x, text: draft, isEdited: true } : x
+                                )
                               );
                               setEditing(null);
                             }}
                           >
-                            Save
+                            Save correction
                           </button>
                           <button
-                            className="btn btn-ghost !px-4 !py-1.5"
+                            className="btn btn-ghost !px-4 !py-1 text-xs"
                             onClick={() => setEditing(null)}
                           >
                             Cancel
@@ -597,16 +706,19 @@ export default function Conversation() {
                       <>
                         <p>{m.text}</p>
                         {m.role === 'user' && (
-                          <button
-                            className="mt-2 inline-flex items-center gap-1 text-xs text-muted hover:text-ink"
-                            onClick={() => {
-                              setEditing(m.id);
-                              setDraft(m.text);
-                            }}
-                          >
-                            <Icon name="edit" size={14} />
-                            Edit transcript
-                          </button>
+                          <div className="mt-2 flex items-center gap-3 text-xs text-muted">
+                            <button
+                              className="inline-flex items-center gap-1 hover:text-ink"
+                              onClick={() => {
+                                setEditing(m.id);
+                                setDraft(m.text);
+                              }}
+                            >
+                              <Icon name="edit" size={13} />
+                              Edit transcript
+                            </button>
+                            {m.isEdited && <span className="text-[11px] italic">(edited)</span>}
+                          </div>
                         )}
                         {m.role === 'ai' && m.id === lastAi && mode === 'voice' && (
                           <div className="mt-3 flex items-center gap-2">

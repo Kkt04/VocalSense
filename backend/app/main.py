@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.config import settings
 from backend.app.api.routes_health import router as health_router
 from backend.app.api.routes_audio import router as audio_router
+from backend.app.api.v1.transcription import router as transcription_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,9 +50,10 @@ def create_app() -> FastAPI:
             },
         )
 
-    # Include Routers with /api prefix
+    # Include Routers with /api and /api/v1 prefix
     app.include_router(health_router, prefix="/api")
     app.include_router(audio_router, prefix="/api")
+    app.include_router(transcription_router, prefix="/api/v1")
 
     @app.get("/", tags=["Root"])
     async def root():

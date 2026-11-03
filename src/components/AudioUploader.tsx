@@ -1,21 +1,27 @@
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
 import Icon from './Icon';
-import { uploadAudio, AudioUploadResponse } from '../services/api';
+import { uploadAudio, transcribeAudio, AudioUploadResponse, TranscriptionResponse } from '../services/api';
 
 interface AudioUploaderProps {
   onUploadSuccess?: (response: AudioUploadResponse) => void;
+  onTranscriptionSuccess?: (response: TranscriptionResponse) => void;
   onCancel?: () => void;
 }
 
 const MAX_SIZE_MB = 25;
 const ACCEPTED_EXTENSIONS = ['.wav', '.webm', '.ogg', '.mp3', '.m4a', '.mp4'];
 
-export default function AudioUploader({ onUploadSuccess, onCancel }: AudioUploaderProps) {
+export default function AudioUploader({
+  onUploadSuccess,
+  onTranscriptionSuccess,
+  onCancel,
+}: AudioUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [languagePreference, setLanguagePreference] = useState<'auto' | 'en' | 'hi'>('auto');
   const [error, setError] = useState<string | null>(null);
-  const [successResponse, setSuccessResponse] = useState<AudioUploadResponse | null>(null);
+  const [successResponse, setSuccessResponse] = useState<TranscriptionResponse | AudioUploadResponse | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): string | null => {
@@ -64,20 +70,32 @@ export default function AudioUploader({ onUploadSuccess, onCancel }: AudioUpload
     }
   };
 
-  const handleUpload = async () => {
+  const handleUploadAndTranscribe = async () => {
     if (!selectedFile) return;
 
     setUploading(true);
     setError(null);
 
     try {
-      const response = await uploadAudio(selectedFile, selectedFile.name);
-      setSuccessResponse(response);
-      if (onUploadSuccess) {
-        onUploadSuccess(response);
+      if (onTranscriptionSuccess) {
+        // Run full speech recognition via Whisper
+        const response = await transcribeAudio(
+          selectedFile,
+          selectedFile.name,
+          languagePreference === 'auto' ? undefined : languagePreference
+        );
+        setSuccessResponse(response);
+        onTranscriptionSuccess(response);
+      } else {
+        // Fallback to upload validation
+        const response = await uploadAudio(selectedFile, selectedFile.name);
+        setSuccessResponse(response);
+        if (onUploadSuccess) {
+          onUploadSuccess(response);
+        }
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Upload failed. Check if backend is running.';
+      const msg = err instanceof Error ? err.message : 'Processing failed. Check if backend is running.';
       setError(msg);
     } finally {
       setUploading(false);
@@ -91,6 +109,10 @@ export default function AudioUploader({ onUploadSuccess, onCancel }: AudioUpload
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const isTranscriptionRes = (res: unknown): res is TranscriptionResponse => {
+    return typeof res === 'object' && res !== null && 'transcript' in res;
   };
 
   return (
@@ -109,7 +131,7 @@ export default function AudioUploader({ onUploadSuccess, onCancel }: AudioUpload
       </div>
 
       <p className="mb-4 text-xs text-muted">
-        Select a pre-recorded audio file to validate against the backend. Supports WAV, WebM, OGG, MP3, and M4A up to 25MB.
+        Select a pre-recorded audio file to transcribe with Whisper. Supports English, Hindi, and Hinglish (.wav, .webm, .ogg, .mp3, .m4a up to 25MB).
       </p>
 
       {/* Drag & Drop Area */}
@@ -151,10 +173,29 @@ export default function AudioUploader({ onUploadSuccess, onCancel }: AudioUpload
         )}
       </div>
 
+      {/* Language Preference Selector */}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-ink/10 pt-3">
+        <span className="text-xs font-medium text-muted">Language Detection:</span>
+        <div className="inline-flex rounded-full bg-ink/5 p-0.5 text-xs">
+          {(['auto', 'en', 'hi'] as const).map((l) => (
+            <button
+              key={l}
+              type="button"
+              onClick={() => setLanguagePreference(l)}
+              className={`rounded-full px-3 py-1 font-medium transition ${
+                languagePreference === l ? 'bg-accent text-onaccent shadow-xs' : 'text-muted hover:text-ink'
+              }`}
+            >
+              {l === 'auto' ? 'Auto-Detect (EN/HI/Hinglish)' : l === 'en' ? 'English' : 'Hindi'}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Error alert */}
       {error && (
         <div className="mt-4 rounded-2xl bg-pink p-3 text-xs text-ink leading-relaxed">
-          <span className="font-semibold">Upload Notice: </span>
+          <span className="font-semibold">Notice: </span>
           {error}
         </div>
       )}
@@ -162,25 +203,23 @@ export default function AudioUploader({ onUploadSuccess, onCancel }: AudioUpload
       {/* Success alert with metadata */}
       {successResponse && (
         <div className="mt-4 rounded-2xl bg-sage p-4 text-xs text-ink leading-relaxed">
-          <p className="font-semibold text-sm mb-1">✓ Audio Validated by Backend</p>
-          <div className="grid grid-cols-2 gap-2 mt-2">
+          {isTranscriptionRes(successResponse) ? (
             <div>
-              <span className="text-muted block">Format:</span>
-              <span className="font-medium uppercase">{successResponse.audio.format_detected}</span>
+              <p className="font-semibold text-sm mb-1">✓ Transcribed via Whisper</p>
+              <p className="text-ink text-sm bg-surface/70 rounded-xl p-2.5 my-2 border border-ink/10 font-serif italic">
+                "{successResponse.transcript}"
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-muted">
+                <div>Language: <span className="font-semibold uppercase text-ink">{successResponse.detected_language}</span></div>
+                <div>Duration: <span className="font-semibold text-ink">{successResponse.duration}s</span></div>
+              </div>
             </div>
+          ) : (
             <div>
-              <span className="text-muted block">Size:</span>
-              <span className="font-medium">{successResponse.audio.size_kb} KB</span>
+              <p className="font-semibold text-sm mb-1">✓ Audio Validated by Backend</p>
+              <p className="text-xs text-muted">Format: {successResponse.audio.format_detected} · {successResponse.audio.size_kb} KB</p>
             </div>
-            <div>
-              <span className="text-muted block">MIME:</span>
-              <span className="font-medium">{successResponse.audio.content_type}</span>
-            </div>
-            <div>
-              <span className="text-muted block">Status:</span>
-              <span className="font-medium text-emerald-700 dark:text-emerald-300">Zero-retention verified</span>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -194,10 +233,10 @@ export default function AudioUploader({ onUploadSuccess, onCancel }: AudioUpload
         <button
           type="button"
           disabled={!selectedFile || uploading}
-          onClick={handleUpload}
+          onClick={handleUploadAndTranscribe}
           className="btn btn-primary !px-5 !py-2 text-xs"
         >
-          {uploading ? 'Validating & Uploading...' : 'Upload & Validate'}
+          {uploading ? 'Transcribing with Whisper...' : 'Transcribe Audio'}
         </button>
       </div>
     </div>

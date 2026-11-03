@@ -6,47 +6,59 @@ VocalSense is a multilingual, voice-first, emotion-aware AI conversational compa
 1. **What a person says:** Speech recognition, transcription, language identification, and conversational context.
 2. **How a person speaks:** Acoustic characteristics such as pitch variation, speaking rate, pauses, and vocal energy.
 
-> **Phase 1 Complete: Frontend & Backend Foundation.**
-> Includes real microphone recording via Web Audio API & MediaRecorder, audio upload endpoint with header validation, CORS, privacy zero-retention handling, animated voice orb, and comprehensive unit tests.
+> **Phase 1 & Phase 2 Complete: Frontend, Backend & Speech Recognition.**
+> Integrates real microphone recording, audio format validation, faster-whisper speech recognition for English, Hindi, and Hinglish, editable transcripts, language detection, and a WER/CER evaluation pipeline.
 
 *Product Principle:* VocalSense is a calm, supportive conversational companion. It is **not** a therapist, a medical device, or a diagnostic tool. Model outputs are uncertain predictions, never facts or diagnoses.
 
 ---
 
-## Architecture Overview (Phase 1)
+## Architecture Overview (Phase 1 & 2)
 
 ```
 vocalsense/
-├── backend/                        # FastAPI Python backend
+├── backend/                               # FastAPI Python backend
 │   ├── app/
-│   │   ├── main.py                 # FastAPI application, CORS, error handling
-│   │   ├── config.py               # Pydantic Settings (sizes, MIME types, CORS)
+│   │   ├── main.py                        # FastAPI application, CORS, routers
+│   │   ├── config.py                      # Pydantic Settings (sizes, Whisper config)
 │   │   ├── api/
-│   │   │   ├── routes_health.py    # GET /api/health
-│   │   │   └── routes_audio.py     # POST /api/audio/upload
+│   │   │   ├── routes_health.py           # GET /api/health
+│   │   │   ├── routes_audio.py            # POST /api/audio/upload
+│   │   │   └── v1/
+│   │   │       ├── __init__.py
+│   │   │       └── transcription.py       # POST /api/v1/transcription/transcribe
 │   │   ├── services/
-│   │   │   ├── audio_validator.py  # Format, size, and magic bytes detection
-│   │   │   └── audio_storage.py    # Privacy-first ephemeral storage handler
+│   │   │   ├── audio_validator.py         # Format, size, and magic bytes detection
+│   │   │   ├── audio_storage.py           # Privacy-first ephemeral storage handler
+│   │   │   └── transcription/
+│   │   │       ├── __init__.py
+│   │   │       ├── whisper_service.py     # faster-whisper model manager & inference
+│   │   │       ├── audio_preprocessing.py # PyAV 16kHz mono resampling & decoding
+│   │   │       └── language_detection.py  # Code-switching & Hinglish classification
 │   │   └── schemas/
-│   │       └── audio.py            # Pydantic response models
+│   │       ├── audio.py                   # Pydantic upload/health schemas
+│   │       └── transcription.py           # Pydantic transcription response schemas
+│   ├── evaluation/
+│   │   └── wer_cer.py                     # Word Error Rate & Character Error Rate evaluator
 │   ├── tests/
-│   │   ├── test_health.py          # Health check endpoint unit tests
-│   │   └── test_audio_upload.py    # Audio upload validation & size tests
+│   │   ├── test_health.py                 # Health check unit tests
+│   │   ├── test_audio_upload.py           # Audio upload validation unit tests
+│   │   └── test_transcription.py          # Whisper transcription & preprocessing tests
 │   └── requirements.txt
-├── src/                            # React + TypeScript frontend
+├── src/                                   # React + TypeScript frontend
 │   ├── components/
-│   │   ├── Orb.tsx                 # Animated responsive voice orb (Framer Motion)
-│   │   ├── Waveform.tsx            # Live frequency waveform
-│   │   ├── AudioUploader.tsx       # Drag-and-drop / file selector audio uploader
+│   │   ├── Orb.tsx                        # Animated responsive voice orb (Framer Motion)
+│   │   ├── Waveform.tsx                   # Live frequency waveform
+│   │   ├── AudioUploader.tsx              # Audio file uploader with direct Whisper transcription
 │   │   └── ...
 │   ├── hooks/
-│   │   ├── useAudioRecorder.ts     # Real Web Audio API AnalyserNode + MediaRecorder
-│   │   └── useSimulatedAudio.ts    # Fallback simulation for no-mic preview
+│   │   ├── useAudioRecorder.ts            # Real Web Audio API AnalyserNode + MediaRecorder
+│   │   └── useSimulatedAudio.ts           # Fallback simulation for no-mic preview
 │   ├── services/
-│   │   └── api.ts                  # Backend API client
+│   │   └── api.ts                         # Backend API client (health, upload, transcribe)
 │   └── pages/
-│       ├── Landing.tsx             # Landing hero and overview
-│       └── Conversation.tsx        # Conversation stage with live mic & upload
+│       ├── Landing.tsx                    # Landing hero and overview
+│       └── Conversation.tsx               # Voice stage with live transcription & editing
 └── .env.example
 ```
 
@@ -54,7 +66,7 @@ vocalsense/
 
 ## Quick Start Guide
 
-### 1. Backend Setup (FastAPI)
+### 1. Backend Setup (FastAPI + Whisper)
 
 Requirements: **Python 3.10+**
 
@@ -66,17 +78,21 @@ source venv/bin/activate
 # 2. Install dependencies
 pip install -r backend/requirements.txt
 
-# 3. Run backend unit tests
+# 3. Run all backend tests (16 unit tests)
 PYTHONPATH=. pytest backend/tests -v
 
-# 4. Start the backend development server
+# 4. Run the WER / CER evaluation demonstration
+PYTHONPATH=. python3 backend/evaluation/wer_cer.py
+
+# 5. Start the backend development server
 uvicorn backend.app.main:app --reload --port 8000
 ```
 
 The API will be available at:
 - Health check: `http://localhost:8000/api/health`
+- Transcription health: `http://localhost:8000/api/v1/transcription/health`
 - Interactive API Docs (Swagger): `http://localhost:8000/docs`
-- Audio Upload Endpoint: `POST http://localhost:8000/api/audio/upload`
+- Transcription Endpoint: `POST http://localhost:8000/api/v1/transcription/transcribe`
 
 ---
 
@@ -92,7 +108,7 @@ npm install
 npm run dev
 ```
 
-The frontend will be running at `http://localhost:5173`.
+The frontend will be running at `http://localhost:5173/#/talk`.
 
 Other commands:
 ```bash
@@ -103,25 +119,25 @@ npm run preview      # Preview production build locally
 
 ---
 
-## Deliverables in Phase 1
+## Deliverables in Phase 2
 
-| Area | Implementation Details |
-| --- | --- |
-| **Microphone Recording** | Real browser recording with `navigator.mediaDevices.getUserMedia` and `MediaRecorder`. Supports Chrome, Firefox, and Safari audio containers. |
-| **Live Audio Waveform** | Web Audio API `AudioContext` and `AnalyserNode` computing real-time frequency distribution driving the waveform and voice orb. |
-| **Audio File Upload** | Direct file upload via `AudioUploader.tsx` (drag-and-drop / file picker) supporting WAV, WebM, OGG, MP3, and M4A up to 25MB. |
-| **FastAPI Backend** | Modular structure: `app/main.py`, `app/config.py`, `app/api/`, `app/services/`, `app/schemas/`. |
-| **Audio Validation** | `audio_validator.py` checks file size, extension, MIME type, and magic header bytes (`RIFF`, `EBML`, `OggS`, `ID3`, `ftyp`). |
-| **Privacy Safeguards** | Zero permanent raw audio retention by default. Ephemeral processing with immediate purge. |
-| **Error Handling** | Clear feedback for microphone permission denial, device errors, unsupported formats, and network disconnections. |
-| **Backend Unit Tests** | 7 automated unit tests covering health status, root metadata, valid WAV/WebM uploads, empty files, unsupported extensions, and file size limits. |
+| Feature | Details |
+|---|---|
+| **Speech Recognition Engine** | `faster-whisper` (CTranslate2) inference engine with configurable model size (`base` default, int8 CPU quantization) and auto-detection of GPU/CPU. |
+| **Multilingual Support** | Automatic language detection and zero-shot preservation for English (`en`), Hindi (`hi`), and Hinglish (code-switching). |
+| **No-Translation Guarantee** | Inference enforces `task="transcribe"`, guaranteeing that Hindi/Hinglish speech is never forced into English translation. |
+| **Audio Preprocessing** | `AudioPreprocessor` converts incoming WAV, WebM, MP3, M4A, OGG into 16,000 Hz mono `float32` arrays via PyAV, skipping external FFmpeg binary dependencies. |
+| **Hinglish Detection** | Heuristic analyzer checks Romanized Hindi markers (`yaar`, `mujhe`, `karna`, `hai`), mixed Latin/Devanagari scripts, and token distributions. |
+| **Editable Transcripts** | Frontend conversation interface displays live transcripts with an inline textarea editor. User corrections persist to the conversation context. |
+| **Speech Evaluation** | `backend/evaluation/wer_cer.py` implements Word Error Rate (WER) and Character Error Rate (CER) via `jiwer` with Unicode NFC normalization. |
+| **Comprehensive Tests** | 16 backend unit tests covering health endpoints, container uploads, audio resampling, silence handling, language detection, and end-to-end Whisper inference. |
 
 ---
 
 ## Roadmap
 
 - [x] **Phase 1 — Build the Basic Product**: Working frontend and backend foundation, recording controls, audio upload endpoint, health check, format validation, unit tests.
-- [ ] **Phase 2 — Speech Recognition**: Whisper / faster-whisper integration, multilingual STT (English, Hindi, Hinglish), editable transcripts, language identification.
+- [x] **Phase 2 — Speech Recognition**: Whisper integration (`faster-whisper`), multilingual STT (English, Hindi, Hinglish), audio preprocessing, editable transcripts, language detection, WER/CER evaluation pipeline.
 - [ ] **Phase 3 — First Machine Learning Model**: Baseline speech emotion classification on RAVDESS, acoustic feature extraction (MFCC, pitch/F0, RMS energy, pauses), SVM & Random Forest comparison.
 - [ ] **Phase 4 — Advanced Speech Models**: Deep learning representations with Wav2Vec2, HuBERT, and comparative evaluation.
 - [ ] **Phase 5 — Research and Reliability**: Speaker-independent evaluation, noise robustness, explainability (SHAP / feature importance), uncertainty estimation & abstention.

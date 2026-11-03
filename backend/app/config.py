@@ -49,6 +49,16 @@ class Settings(BaseSettings):
     RETAIN_RAW_AUDIO: bool = False
     TEMP_STORAGE_DIR: str = "/tmp/vocalsense/audio"
 
+    # Speech Recognition (Whisper / faster-whisper)
+    WHISPER_MODEL_SIZE: str = "base"  # "tiny", "base", "small", "medium", "large-v3"
+    WHISPER_DEVICE: str = "auto"       # "auto", "cpu", "cuda"
+    WHISPER_COMPUTE_TYPE: str = "auto" # "auto", "int8", "float16", "float32"
+    WHISPER_BEAM_SIZE: int = 5
+    WHISPER_INITIAL_PROMPT: str = (
+        "Conversations in English, Hindi, and Hinglish. "
+        "Yaar, mujhe kal presentation complete karna hai."
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
