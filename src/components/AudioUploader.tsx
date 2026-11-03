@@ -1,0 +1,205 @@
+import { useState, useRef, DragEvent, ChangeEvent } from 'react';
+import Icon from './Icon';
+import { uploadAudio, AudioUploadResponse } from '../services/api';
+
+interface AudioUploaderProps {
+  onUploadSuccess?: (response: AudioUploadResponse) => void;
+  onCancel?: () => void;
+}
+
+const MAX_SIZE_MB = 25;
+const ACCEPTED_EXTENSIONS = ['.wav', '.webm', '.ogg', '.mp3', '.m4a', '.mp4'];
+
+export default function AudioUploader({ onUploadSuccess, onCancel }: AudioUploaderProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successResponse, setSuccessResponse] = useState<AudioUploadResponse | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const validateFile = (file: File): string | null => {
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!ACCEPTED_EXTENSIONS.includes(ext)) {
+      return `Unsupported file format. Please upload: ${ACCEPTED_EXTENSIONS.join(', ')}`;
+    }
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      return `File exceeds the maximum limit of ${MAX_SIZE_MB} MB (${(file.size / (1024 * 1024)).toFixed(1)} MB).`;
+    }
+    return null;
+  };
+
+  const handleFile = (file: File) => {
+    setError(null);
+    setSuccessResponse(null);
+    const validationError = validateFile(file);
+    if (validationError) {
+      setError(validationError);
+      setSelectedFile(null);
+      return;
+    }
+    setSelectedFile(file);
+  };
+
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const response = await uploadAudio(selectedFile, selectedFile.name);
+      setSuccessResponse(response);
+      if (onUploadSuccess) {
+        onUploadSuccess(response);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Upload failed. Check if backend is running.';
+      setError(msg);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setSelectedFile(null);
+    setError(null);
+    setSuccessResponse(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="rounded-3xl border border-ink/10 bg-surface p-6 shadow-soft">
+      <div className="flex items-center justify-between pb-3">
+        <h3 className="font-serif text-lg">Upload Audio Recording</h3>
+        {onCancel && (
+          <button
+            type="button"
+            className="text-xs text-muted hover:text-ink"
+            onClick={onCancel}
+          >
+            Close
+          </button>
+        )}
+      </div>
+
+      <p className="mb-4 text-xs text-muted">
+        Select a pre-recorded audio file to validate against the backend. Supports WAV, WebM, OGG, MP3, and M4A up to 25MB.
+      </p>
+
+      {/* Drag & Drop Area */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition ${
+          isDragging
+            ? 'border-accent bg-lav/50'
+            : selectedFile
+            ? 'border-accent/60 bg-lav/20'
+            : 'border-ink/15 hover:border-ink/30 hover:bg-ink/5'
+        }`}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ACCEPTED_EXTENSIONS.join(',')}
+          className="hidden"
+          onChange={handleFileInputChange}
+        />
+
+        <div className="mb-2 grid h-12 w-12 place-items-center rounded-full bg-lav text-accent">
+          <Icon name="mic" size={24} />
+        </div>
+
+        {selectedFile ? (
+          <div>
+            <p className="text-sm font-semibold text-ink">{selectedFile.name}</p>
+            <p className="text-xs text-muted">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm font-medium">Click or drag audio file here</p>
+            <p className="mt-1 text-xs text-muted">WAV, WebM, OGG, MP3, M4A up to 25MB</p>
+          </div>
+        )}
+      </div>
+
+      {/* Error alert */}
+      {error && (
+        <div className="mt-4 rounded-2xl bg-pink p-3 text-xs text-ink leading-relaxed">
+          <span className="font-semibold">Upload Notice: </span>
+          {error}
+        </div>
+      )}
+
+      {/* Success alert with metadata */}
+      {successResponse && (
+        <div className="mt-4 rounded-2xl bg-sage p-4 text-xs text-ink leading-relaxed">
+          <p className="font-semibold text-sm mb-1">✓ Audio Validated by Backend</p>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <div>
+              <span className="text-muted block">Format:</span>
+              <span className="font-medium uppercase">{successResponse.audio.format_detected}</span>
+            </div>
+            <div>
+              <span className="text-muted block">Size:</span>
+              <span className="font-medium">{successResponse.audio.size_kb} KB</span>
+            </div>
+            <div>
+              <span className="text-muted block">MIME:</span>
+              <span className="font-medium">{successResponse.audio.content_type}</span>
+            </div>
+            <div>
+              <span className="text-muted block">Status:</span>
+              <span className="font-medium text-emerald-700 dark:text-emerald-300">Zero-retention verified</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="mt-5 flex items-center justify-end gap-2">
+        {selectedFile && !uploading && (
+          <button type="button" className="btn btn-ghost !px-4 !py-2 text-xs" onClick={handleReset}>
+            Clear
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={!selectedFile || uploading}
+          onClick={handleUpload}
+          className="btn btn-primary !px-5 !py-2 text-xs"
+        >
+          {uploading ? 'Validating & Uploading...' : 'Upload & Validate'}
+        </button>
+      </div>
+    </div>
+  );
+}

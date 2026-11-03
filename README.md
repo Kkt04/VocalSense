@@ -2,129 +2,127 @@
 
 **More than speech recognition. A new way to listen, understand and respond.**
 
-VocalSense is a voice-first, multilingual, emotion-aware conversational AI companion. It is designed to look at two things: *what* a person says (transcript, language, context) and *how* they say it (measurable acoustic traits such as pace, pitch variation, pauses and energy).
+VocalSense is a multilingual, voice-first, emotion-aware AI conversational companion. It is designed to understand both:
+1. **What a person says:** Speech recognition, transcription, language identification, and conversational context.
+2. **How a person speaks:** Acoustic characteristics such as pitch variation, speaking rate, pauses, and vocal energy.
 
-> **Current status: Phase 1 of 8 — frontend design-system prototype.**
-> The interface is complete and interactive, but **audio, transcripts, replies and insights are simulated**. No microphone is accessed, no backend exists yet, and no ML model is trained or running. Every mock element is labelled in the UI.
+> **Phase 1 Complete: Frontend & Backend Foundation.**
+> Includes real microphone recording via Web Audio API & MediaRecorder, audio upload endpoint with header validation, CORS, privacy zero-retention handling, animated voice orb, and comprehensive unit tests.
 
-VocalSense is a conversational companion. It is **not** a therapist, a medical device or a diagnostic tool.
+*Product Principle:* VocalSense is a calm, supportive conversational companion. It is **not** a therapist, a medical device, or a diagnostic tool. Model outputs are uncertain predictions, never facts or diagnoses.
 
 ---
 
-## What is in Phase 1
+## Architecture Overview (Phase 1)
 
-| Area | Details |
-| --- | --- |
-| Landing page | Hero, features, how-it-works, privacy section, footer. The microphone never starts automatically. |
-| Conversation screen | Animated voice orb, simulated live waveform, recording timer, transcript, response panel, style and mode selectors, end-session control. |
-| Conversation states | Idle, permission, listening, paused, processing, analysing, responding, error — with the exact copy from the product brief. |
-| Recording controls | Start, pause, resume, stop, retry, mute. Permission is explained before any (simulated) access. |
-| Transcript | Mock transcript, with inline editing before it is used. |
-| Responses | Voice mode (simulated playback with pause, replay, mute, stop, progress) and text mode. Switchable at any time. |
-| Conversation styles | Just listen, Help me think, Practical suggestions, Distract me. Each returns a different mock reply. |
-| Speech insights | Optional panel with neutral wording and the "Unable to estimate reliably" state. Values are samples only. |
-| Themes | **Light and dark, both pastel.** Follows the OS setting on first visit, remembers your choice afterwards. |
-| Accessibility | Keyboard navigation, visible focus rings, ARIA roles and live regions, `prefers-reduced-motion` respected. |
-| Responsive | Desktop, tablet and mobile layouts. |
+```
+vocalsense/
+├── backend/                        # FastAPI Python backend
+│   ├── app/
+│   │   ├── main.py                 # FastAPI application, CORS, error handling
+│   │   ├── config.py               # Pydantic Settings (sizes, MIME types, CORS)
+│   │   ├── api/
+│   │   │   ├── routes_health.py    # GET /api/health
+│   │   │   └── routes_audio.py     # POST /api/audio/upload
+│   │   ├── services/
+│   │   │   ├── audio_validator.py  # Format, size, and magic bytes detection
+│   │   │   └── audio_storage.py    # Privacy-first ephemeral storage handler
+│   │   └── schemas/
+│   │       └── audio.py            # Pydantic response models
+│   ├── tests/
+│   │   ├── test_health.py          # Health check endpoint unit tests
+│   │   └── test_audio_upload.py    # Audio upload validation & size tests
+│   └── requirements.txt
+├── src/                            # React + TypeScript frontend
+│   ├── components/
+│   │   ├── Orb.tsx                 # Animated responsive voice orb (Framer Motion)
+│   │   ├── Waveform.tsx            # Live frequency waveform
+│   │   ├── AudioUploader.tsx       # Drag-and-drop / file selector audio uploader
+│   │   └── ...
+│   ├── hooks/
+│   │   ├── useAudioRecorder.ts     # Real Web Audio API AnalyserNode + MediaRecorder
+│   │   └── useSimulatedAudio.ts    # Fallback simulation for no-mic preview
+│   ├── services/
+│   │   └── api.ts                  # Backend API client
+│   └── pages/
+│       ├── Landing.tsx             # Landing hero and overview
+│       └── Conversation.tsx        # Conversation stage with live mic & upload
+└── .env.example
+```
 
-## Quick start
+---
 
-Requirements: **Node.js 18+** and npm.
+## Quick Start Guide
+
+### 1. Backend Setup (FastAPI)
+
+Requirements: **Python 3.10+**
 
 ```bash
+# 1. Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 2. Install dependencies
+pip install -r backend/requirements.txt
+
+# 3. Run backend unit tests
+PYTHONPATH=. pytest backend/tests -v
+
+# 4. Start the backend development server
+uvicorn backend.app.main:app --reload --port 8000
+```
+
+The API will be available at:
+- Health check: `http://localhost:8000/api/health`
+- Interactive API Docs (Swagger): `http://localhost:8000/docs`
+- Audio Upload Endpoint: `POST http://localhost:8000/api/audio/upload`
+
+---
+
+### 2. Frontend Setup (React + TypeScript)
+
+Requirements: **Node.js 18+** and npm
+
+```bash
+# 1. Install dependencies
 npm install
-npm run dev        # http://localhost:5173
+
+# 2. Start Vite development server
+npm run dev
 ```
 
-Other scripts:
+The frontend will be running at `http://localhost:5173`.
 
+Other commands:
 ```bash
-npm run typecheck  # TypeScript check
-npm run build      # type-check + production build into dist/
-npm run preview    # serve the production build locally
+npm run typecheck    # Validate TypeScript types
+npm run build        # Production build
+npm run preview      # Preview production build locally
 ```
 
-Routes (hash-based, no router dependency): `#/` landing page, `#/talk` conversation screen.
+---
 
-## Trying the prototype
+## Deliverables in Phase 1
 
-1. Open the landing page and press **Start Talking**.
-2. On the conversation screen press **Start talking**, then **Allow (demo)**. Nothing real is recorded.
-3. Use pause, resume, mute, stop or retry. Stop produces the mock transcript, then the processing, analysing and responding states.
-4. Edit the transcript, switch **Voice / Text**, change the **Conversation style**, and turn on **Speech insights**.
-5. Use **Preview the error state** (visible when idle) to see the error and retry flow.
-6. Toggle **Light / Dark** from the header on any page.
+| Area | Implementation Details |
+| --- | --- |
+| **Microphone Recording** | Real browser recording with `navigator.mediaDevices.getUserMedia` and `MediaRecorder`. Supports Chrome, Firefox, and Safari audio containers. |
+| **Live Audio Waveform** | Web Audio API `AudioContext` and `AnalyserNode` computing real-time frequency distribution driving the waveform and voice orb. |
+| **Audio File Upload** | Direct file upload via `AudioUploader.tsx` (drag-and-drop / file picker) supporting WAV, WebM, OGG, MP3, and M4A up to 25MB. |
+| **FastAPI Backend** | Modular structure: `app/main.py`, `app/config.py`, `app/api/`, `app/services/`, `app/schemas/`. |
+| **Audio Validation** | `audio_validator.py` checks file size, extension, MIME type, and magic header bytes (`RIFF`, `EBML`, `OggS`, `ID3`, `ftyp`). |
+| **Privacy Safeguards** | Zero permanent raw audio retention by default. Ephemeral processing with immediate purge. |
+| **Error Handling** | Clear feedback for microphone permission denial, device errors, unsupported formats, and network disconnections. |
+| **Backend Unit Tests** | 7 automated unit tests covering health status, root metadata, valid WAV/WebM uploads, empty files, unsupported extensions, and file size limits. |
 
-## Design system
-
-Colours are CSS variables defined in `src/styles/index.css` and mapped to Tailwind in `tailwind.config.js`. Components use tokens (`bg-bg`, `bg-lav`, `text-ink`, `bg-accent`), so a theme switch needs no component changes.
-
-| Token | Light | Dark |
-| --- | --- | --- |
-| `bg` | `#FAF8F4` warm ivory | `#1B1822` dusky plum |
-| `lav` | `#E9E0F2` soft lavender | `#3D3450` |
-| `pink` | `#F3E5E8` pale pink | `#4F3B47` |
-| `sage` | `#DDE7DD` muted sage | `#344239` |
-| `peach` | `#F4E1D4` soft peach | `#544238` |
-| `deep` / `accent` | `#8E7BAA` / `#70608C` | `#9684B8` / `#CBBCE6` |
-| `ink` | `#34303A` | `#ECE7F2` |
-
-Typography: **DM Serif Display** for headings, **DM Sans** for interface text (loaded from Google Fonts in `index.html`).
-
-The orb reacts only to audio level and activity. Its colour never encodes an emotion, by design.
-
-## Project structure
-
-```
-src/
-  App.tsx                    hash router
-  main.tsx                   entry, ThemeProvider
-  pages/
-    Landing.tsx              landing page
-    Conversation.tsx         voice conversation screen and state machine
-  components/
-    Orb.tsx  Waveform.tsx  Icon.tsx  Logo.tsx  ThemeToggle.tsx
-  context/ThemeContext.tsx   light/dark theme, persisted
-  hooks/useSimulatedAudio.ts MOCK amplitude source (replaced in Phase 2)
-  styles/index.css           theme tokens and shared component classes
-```
-
-Where mock data lives: `MOCK_TRANSCRIPT`, `STYLES[].reply` and `INSIGHTS` at the top of `src/pages/Conversation.tsx`, plus `useSimulatedAudio.ts`.
+---
 
 ## Roadmap
 
-| Phase | Scope | Status |
-| --- | --- | --- |
-| 1 | Design system, landing page, conversation UI | **Done (this repo)** |
-| 2 | Microphone, MediaRecorder, Whisper transcription, editable transcripts | Next |
-| 3 | LLM conversation, styles, text-to-speech | Planned |
-| 4 | Acoustic features (MFCC, pitch, energy, pauses), baseline classifiers | Planned |
-| 5 | Wav2Vec2 and HuBERT, speaker-independent evaluation | Planned |
-| 6 | Explainability, calibration, abstention, robustness | Planned |
-| 7 | Hindi/English/Hinglish evaluation, personal voice baseline, memory | Planned |
-| 8 | Tests, security checks, Docker, deployment | Planned |
-
-Planned stack: React, TypeScript, Tailwind, Framer Motion, Web Audio API and MediaRecorder on the frontend; Python, FastAPI, Pydantic, SQLAlchemy, PostgreSQL, PyTorch, librosa, torchaudio, Hugging Face Transformers, faster-whisper and scikit-learn on the backend and ML side.
-
-## Principles
-
-- **Consent first.** Recording starts only after an explicit action and permission.
-- **Privacy by design.** No raw audio stored by default. Voice baselines and memory are opt-in and kept separate.
-- **Scientific honesty.** No placeholder model will ever be presented as real emotion recognition. The system must be able to abstain.
-- **User words first.** Transcripts and stated preferences outrank any model estimate.
-- **No diagnosis.** Insights use neutral language ("higher-than-usual vocal energy was observed"), never "you were angry".
-- **Safety.** Phase 3 will add a dedicated response path for immediate danger or self-harm. Vocal emotion classification will never be used as a risk detector.
-
-## Known limitations (Phase 1)
-
-- All audio, transcripts, replies, playback and insights are simulated.
-- No unsupported-browser detection, network-failure handling or audio-quality checks yet (they need real audio, Phase 2).
-- The response language selector, personal voice baseline, memory controls and self-reported check-in are not built yet (Phases 3 and 7).
-- No automated tests yet. Only a TypeScript type-check and production build were run.
-- Fonts load from Google Fonts, so offline use falls back to Georgia and system sans.
-- Not yet checked with a screen reader or on physical devices.
-
-## Environment variables
-
-Phase 1 needs none. `.env.example` lists placeholders for later phases. Never put API keys in frontend code.
-# VocalSense
+- [x] **Phase 1 — Build the Basic Product**: Working frontend and backend foundation, recording controls, audio upload endpoint, health check, format validation, unit tests.
+- [ ] **Phase 2 — Speech Recognition**: Whisper / faster-whisper integration, multilingual STT (English, Hindi, Hinglish), editable transcripts, language identification.
+- [ ] **Phase 3 — First Machine Learning Model**: Baseline speech emotion classification on RAVDESS, acoustic feature extraction (MFCC, pitch/F0, RMS energy, pauses), SVM & Random Forest comparison.
+- [ ] **Phase 4 — Advanced Speech Models**: Deep learning representations with Wav2Vec2, HuBERT, and comparative evaluation.
+- [ ] **Phase 5 — Research and Reliability**: Speaker-independent evaluation, noise robustness, explainability (SHAP / feature importance), uncertainty estimation & abstention.
+- [ ] **Phase 6 — Complete VocalSense**: LLM conversational engine, conversation styles, text-to-speech, voice insights panel, and deployment.
