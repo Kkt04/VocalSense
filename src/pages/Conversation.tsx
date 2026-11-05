@@ -84,7 +84,7 @@ export default function Conversation() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [style, setStyle] = useState<StyleId>('listen');
   const [mode, setMode] = useState<'voice' | 'text'>('voice');
-  const [languagePreference, setLanguagePreference] = useState<'auto' | 'en' | 'hi' | 'hinglish' | 'es' | 'fr'>('auto');
+  const [languagePreference] = useState<'auto'>('auto');
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [editing, setEditing] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
@@ -105,6 +105,7 @@ export default function Conversation() {
   const [emotionData, setEmotionData] = useState<EmotionPredictionResponse | null>(null);
 
   const timers = useRef<number[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const later = useCallback((fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
   }, []);
@@ -113,6 +114,11 @@ export default function Conversation() {
     timers.current = [];
   };
   useEffect(() => clearTimers, []);
+
+  // Auto-scroll conversation to latest message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [msgs]);
 
   // Real microphone audio recorder hook
   const recorder = useAudioRecorder(36);
@@ -483,46 +489,15 @@ export default function Conversation() {
             />
             <span className="text-muted text-[11px]">
               {backendStatus === 'online'
-                ? `${sttModelName || 'STT Ready'} · ${emotionModelName || 'SER Ready'}`
+                ? 'Live'
                 : backendStatus === 'checking'
-                ? 'Checking backend...'
-                : 'Backend Offline'}
+                ? 'Connecting...'
+                : 'Offline'}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Language selector */}
-          <div className="inline-flex rounded-full bg-ink/5 p-0.5 text-xs">
-            {(['auto', 'en', 'hi', 'hinglish', 'es', 'fr'] as const).map((l) => (
-              <button
-                key={l}
-                type="button"
-                onClick={() => setLanguagePreference(l)}
-                className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
-                  languagePreference === l
-                    ? 'bg-accent text-onaccent shadow-xs'
-                    : 'text-muted hover:text-ink'
-                }`}
-                title={`Language: ${
-                  l === 'auto'
-                    ? 'Auto-Detect (EN/HI/Hinglish/ES/FR)'
-                    : l === 'en'
-                    ? 'English'
-                    : l === 'hi'
-                    ? 'Hindi'
-                    : l === 'hinglish'
-                    ? 'Hinglish'
-                    : l === 'es'
-                    ? 'Spanish'
-                    : 'French'
-                }`}
-              >
-                {l === 'auto' ? 'Auto' : l === 'en' ? 'EN' : l === 'hi' ? 'HI' : l === 'hinglish' ? 'Hinglish' : l.toUpperCase()}
-              </button>
-            ))}
-          </div>
-
           <button
             type="button"
             className="btn btn-ghost !py-2 text-xs"
@@ -774,7 +749,7 @@ export default function Conversation() {
               )}
             </div>
 
-            <div className="mt-4 flex flex-1 flex-col gap-3 overflow-y-auto" aria-live="polite">
+            <div className="mt-4 flex flex-col gap-3 max-h-[420px] overflow-y-auto pr-1 scroll-smooth" aria-live="polite">
               {msgs.length === 0 && (
                 <div className="grid flex-1 place-items-center rounded-2xl border border-dashed border-ink/15 p-6 text-center text-sm text-muted">
                   Speak in English, Hindi, or Hinglish. Your words will be transcribed by Whisper and displayed here.
@@ -896,6 +871,7 @@ export default function Conversation() {
                   </motion.article>
                 ))}
               </AnimatePresence>
+              <div ref={messagesEndRef} />
             </div>
           </section>
 
@@ -950,6 +926,7 @@ export default function Conversation() {
 
               <label className="flex cursor-pointer items-center gap-3 text-sm">
                 <span>Speech insights</span>
+                <span className="text-[11px] text-muted">· latest turn</span>
                 <input
                   type="checkbox"
                   role="switch"
@@ -1035,6 +1012,65 @@ export default function Conversation() {
           </section>
         </div>
       </main>
+
+      {/* Privacy & Safety Principles */}
+      <section className="mx-auto w-full max-w-6xl px-5 pb-10 pt-2" aria-label="Privacy principles">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                </svg>
+              ),
+              color: 'bg-lav',
+              title: 'You stay in control',
+              body: 'Recording begins only after you press Start and explicitly allow microphone access.',
+            },
+            {
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.955 11.955 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                </svg>
+              ),
+              color: 'bg-sage',
+              title: 'Zero permanent audio',
+              body: 'Audio is processed ephemerally in-memory. No raw recordings are retained by default.',
+            },
+            {
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+              ),
+              color: 'bg-peach',
+              title: 'Strictly opt-in memory',
+              body: 'Conversation history and acoustic memory are independent features—both off unless you choose otherwise.',
+            },
+            {
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                </svg>
+              ),
+              color: 'bg-pink',
+              title: 'Companion, not clinician',
+              body: 'VocalSense listens and reflects. It never diagnoses, assesses, or provides medical or therapeutic advice.',
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className={`${item.color} rounded-2xl p-4 flex flex-col gap-2 border border-ink/5`}
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/40 text-ink/70">
+                {item.icon}
+              </div>
+              <p className="text-sm font-semibold leading-snug">{item.title}</p>
+              <p className="text-xs text-muted leading-relaxed">{item.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

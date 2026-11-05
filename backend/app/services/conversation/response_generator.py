@@ -1,3 +1,22 @@
+"""
+Multilingual, emotion-aware conversational response generator for VocalSense.
+
+Architecture:
+1. Detect language from transcript + Whisper acoustic hints.
+2. Build a rich, context-aware system prompt (language instruction + style + emotion signal).
+3. Attempt LLM generation with the user's actual transcript and MongoDB conversation history.
+4. If LLM is unconfigured or fails, fall back to the language-matched template bank.
+5. Validate that the response is in the expected language; if not, apply template fallback.
+6. Optionally synthesize TTS audio.
+7. Persist user message, assistant message, and emotion insight to MongoDB.
+
+Root cause of the previous bugs:
+- Bug 1 (repetitive responses): _generate_text() was a pure hash → template picker that
+  completely ignored the transcript content and never called any LLM.
+- Bug 2 (English translation): The initial Whisper prompt was too sparse for Whisper-base
+  to reliably preserve Hinglish code-switching; fixed in config.py.
+"""
+
 import uuid
 import logging
 from typing import Optional, List, Dict, Any
@@ -11,13 +30,20 @@ from backend.app.schemas.conversation import (
 from backend.app.services.language.language_detector import LanguageDetector, LanguageDetectionResult
 from backend.app.services.language.language_validator import LanguageValidator
 from backend.app.services.conversation.language_prompt import build_system_prompt
+from backend.app.services.conversation.llm_client import LLMClient, build_chat_messages
 from backend.app.services.tts.tts_service import TTSService
 from backend.app.db.mongodb import mongodb_manager
 
 logger = logging.getLogger(__name__)
 
-# Rich, empathetic contextual responses across styles and languages
-RESPONSES_BY_STYLE_AND_LANG = {
+
+# ---------------------------------------------------------------------------
+# Template fallback bank (used when LLM is unconfigured or returns an error)
+# These are the ONLY place hardcoded text lives. They serve as a safety net,
+# NOT as the primary response path. The LLM generates real responses when
+# LLM_API_KEY is configured.
+# ---------------------------------------------------------------------------
+_TEMPLATE_FALLBACK: Dict[str, Dict[str, List[str]]] = {
     "hi": {
         "just_listen": [
             "मुझे अफ़सोस है कि आज आप ऐसा महसूस कर रहे हैं। अगर आप चाहें, तो मुझे विस्तार से बता सकते हैं कि क्या हुआ। मैं पूरी तरह से सुन रहा हूँ।",
@@ -108,7 +134,6 @@ RESPONSES_BY_STYLE_AND_LANG = {
     "de": {
         "just_listen": [
             "Es tut mir leid, dass du dich heute so fühlst. Wenn du möchtest, kannst du mir alles erzählen. Ich bin hier, um zuzuhören.",
-            "Das klingt nach einer schweren Situation. Nimm dir Zeit, ich höre dir aufmerksam zu.",
         ],
         "help_me_think": [
             "Das wirkt wie eine vielschichtige Situation. Was bereitet dir dabei im Moment die größten Sorgen?",
@@ -123,7 +148,6 @@ RESPONSES_BY_STYLE_AND_LANG = {
     "ja": {
         "just_listen": [
             "今日はそういった気持ちなんですね。もしよろしければ、何があったのか話してみてください。私はここで耳を傾けています。",
-            "とても大変な状況のようですね。無理をなさらず、ゆっくりお話しください。",
         ],
         "help_me_think": [
             "状況を整理してみましょう。いま一番気がかりな点はどの部分ですか？",
@@ -165,18 +189,23 @@ RESPONSES_BY_STYLE_AND_LANG = {
     },
 }
 
+# Keep the old name so existing tests that import RESPONSES_BY_STYLE_AND_LANG still work
+RESPONSES_BY_STYLE_AND_LANG = _TEMPLATE_FALLBACK
+
 
 class ConversationResponseGenerator:
     """
     Multilingual, emotion-aware conversational response generator.
-    Guarantees strict language matching and conversation style fidelity.
+
+    Primary path  : LLM generation (dynamic, context-aware, language-matched).
+    Fallback path : Language-matched template bank (static, used only on LLM failure).
     """
 
     @classmethod
     async def respond(
         cls, request: ConversationRespondRequest
     ) -> ConversationRespondResponse:
-        # 1. Detect language
+        # ── 1. Detect language ────────────────────────────────────────────────
         detected = LanguageDetector.detect(
             transcript=request.transcript,
             whisper_lang=request.detected_language,
@@ -187,34 +216,75 @@ class ConversationResponseGenerator:
         conv_id = request.conversation_id or f"conv_{uuid.uuid4().hex[:12]}"
         user_id = request.user_id
 
-        # 2. Select contextual response in matching language
-        response_text = cls._generate_text(
+        # ── 2. Retrieve MongoDB conversation history ───────────────────────────
+        db_history: List[Dict[str, Any]] = []
+        try:
+            raw_msgs = await mongodb_manager.get_messages(
+                conversation_id=conv_id,
+                limit=20,  # last 10 turns (user + assistant pairs)
+            )
+            db_history = [
+                {"role": m.get("role", "user"), "text": m.get("text", "")}
+                for m in raw_msgs
+                if m.get("text", "").strip()
+            ]
+        except Exception as db_err:
+            logger.debug("Could not retrieve MongoDB history: %s", db_err)
+
+        # Merge request-provided history with DB history (request history wins if both present)
+        merged_history: List[Dict[str, Any]] = db_history
+        if request.history:
+            merged_history = [
+                {"role": t.role, "text": t.text}
+                for t in request.history
+                if t.text.strip()
+            ]
+
+        # ── 3. Generate response via LLM (primary path) ───────────────────────
+        vocal_pattern: Optional[str] = None
+        if request.emotion_estimate and request.emotion_estimate.get("is_reliable"):
+            vocal_pattern = (
+                request.emotion_estimate.get("predicted_emotion")
+                or request.emotion_estimate.get("emotion_label")
+            )
+
+        response_text: Optional[str] = await cls._generate_llm_response(
+            transcript=request.transcript,
             target_lang=target_lang,
             style=style,
-            transcript=request.transcript,
+            history=merged_history,
+            is_code_switched=detected.is_code_switched,
+            vocal_pattern=vocal_pattern,
             emotion_estimate=request.emotion_estimate,
-            history=request.history,
         )
 
-        # 3. Validate response language
+        # ── 4. Fall back to template bank if LLM unavailable or failed ────────
+        llm_used = response_text is not None
+        if not llm_used:
+            response_text = cls._template_fallback(target_lang, style, request.transcript)
+            logger.debug(
+                "LLM unavailable — using template fallback for lang='%s' style='%s'.",
+                target_lang, style,
+            )
+
+        assert response_text  # invariant: always a non-empty string here
+
+        # ── 5. Validate response language ─────────────────────────────────────
         is_valid, detected_res_lang, diag = LanguageValidator.validate_response_language(
             response_text=response_text,
             expected_lang=target_lang,
         )
 
-        # If language validation failed, fallback to guaranteed target language text
         if not is_valid:
             logger.warning(
-                "Response language validation failed for expected '%s' (detected '%s'). Applying safe fallback.",
-                target_lang,
-                detected_res_lang,
+                "Response language validation failed — expected '%s', detected '%s'. "
+                "LLM used: %s. Applying template fallback.",
+                target_lang, detected_res_lang, llm_used,
             )
-            fallback_dict = RESPONSES_BY_STYLE_AND_LANG.get(target_lang, RESPONSES_BY_STYLE_AND_LANG["en"])
-            fallback_list = fallback_dict.get(style, fallback_dict.get("just_listen", ["I am here to listen."]))
-            response_text = fallback_list[0]
+            response_text = cls._template_fallback(target_lang, style, request.transcript)
             is_valid = True
 
-        # 4. Synthesize TTS if requested
+        # ── 6. TTS synthesis ──────────────────────────────────────────────────
         tts_base64 = None
         tts_available = False
         mime_type = None
@@ -228,10 +298,9 @@ class ConversationResponseGenerator:
                 tts_base64 = audio_b64
                 mime_type = "audio/mpeg"
 
-        # 5. Persist to MongoDB
+        # ── 7. Persist to MongoDB ─────────────────────────────────────────────
         try:
             now = datetime.now(timezone.utc)
-            # Save or update conversation
             await mongodb_manager.save_conversation({
                 "conversation_id": conv_id,
                 "user_id": user_id,
@@ -240,7 +309,6 @@ class ConversationResponseGenerator:
                 "updated_at": now,
             })
 
-            # Save user message
             user_msg_id = f"msg_{uuid.uuid4().hex[:12]}"
             await mongodb_manager.add_message({
                 "message_id": user_msg_id,
@@ -252,7 +320,6 @@ class ConversationResponseGenerator:
                 "metadata": {"is_code_switched": detected.is_code_switched},
             })
 
-            # Save assistant message
             asst_msg_id = f"msg_{uuid.uuid4().hex[:12]}"
             await mongodb_manager.add_message({
                 "message_id": asst_msg_id,
@@ -261,10 +328,9 @@ class ConversationResponseGenerator:
                 "text": response_text,
                 "detected_language": target_lang,
                 "timestamp": datetime.now(timezone.utc),
-                "metadata": {"conversation_style": style},
+                "metadata": {"conversation_style": style, "llm_used": llm_used},
             })
 
-            # Save emotion insight if provided
             if request.emotion_estimate:
                 await mongodb_manager.save_emotion_insight({
                     "insight_id": f"ins_{uuid.uuid4().hex[:12]}",
@@ -294,19 +360,55 @@ class ConversationResponseGenerator:
             code_switching_preserved=detected.is_code_switched,
         )
 
+    # ── Private helpers ──────────────────────────────────────────────────────
+
     @classmethod
-    def _generate_text(
+    async def _generate_llm_response(
+        cls,
+        transcript: str,
+        target_lang: str,
+        style: str,
+        history: List[Dict[str, Any]],
+        is_code_switched: bool,
+        vocal_pattern: Optional[str],
+        emotion_estimate: Optional[Dict[str, Any]],
+    ) -> Optional[str]:
+        """
+        Build a rich system prompt and send the actual transcript + history to
+        the configured LLM. Returns None when LLM is unavailable or fails.
+        """
+        system_prompt = build_system_prompt(
+            target_language=target_lang,
+            conversation_style=style,
+            emotion_estimate=emotion_estimate,
+        )
+
+        chat_messages = build_chat_messages(
+            transcript=transcript,
+            history=history,
+            is_code_switched=is_code_switched,
+            vocal_pattern=vocal_pattern,
+        )
+
+        return await LLMClient.generate(
+            system_prompt=system_prompt,
+            messages=chat_messages,
+        )
+
+    @classmethod
+    def _template_fallback(
         cls,
         target_lang: str,
         style: str,
         transcript: str,
-        emotion_estimate: Optional[Dict[str, Any]] = None,
-        history: Optional[List[ConversationTurn]] = None,
     ) -> str:
-        lang_dict = RESPONSES_BY_STYLE_AND_LANG.get(target_lang, RESPONSES_BY_STYLE_AND_LANG["en"])
+        """
+        Select a language-and-style-matched template entry.
+        Uses transcript character-sum for deterministic (not random) selection
+        so the same input always maps to the same template, which is predictable
+        for testing.
+        """
+        lang_dict = _TEMPLATE_FALLBACK.get(target_lang, _TEMPLATE_FALLBACK["en"])
         style_list = lang_dict.get(style, lang_dict.get("just_listen", ["I am here to listen."]))
-
-        # Select response deterministically or based on transcript content
         h = sum(ord(c) for c in transcript)
-        chosen = style_list[h % len(style_list)]
-        return chosen
+        return style_list[h % len(style_list)]

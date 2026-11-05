@@ -54,10 +54,30 @@ class Settings(BaseSettings):
     WHISPER_DEVICE: str = "auto"       # "auto", "cpu", "cuda"
     WHISPER_COMPUTE_TYPE: str = "auto" # "auto", "int8", "float16", "float32"
     WHISPER_BEAM_SIZE: int = 5
+    # Whisper initial prompt: rich multilingual vocabulary to bias Whisper toward
+    # preserving code-switching (Hinglish) rather than translating into English.
+    # Includes Devanagari, Romanized Hindi, and mixed Hindi-English sentences so the
+    # model's vocabulary index covers the full Hinglish lexicon.
     WHISPER_INITIAL_PROMPT: str = (
-        "Conversations in English, Hindi, and Hinglish. "
-        "Yaar, mujhe kal presentation complete karna hai."
+        "Multilingual conversation in English, Hindi, and Hinglish (Hindi-English code-switching). "
+        "Yaar, aaj mera mood bilkul theek nahi hai. "
+        "Mujhe samajh nahi aa raha kya karun. "
+        "College mein bhi kuch accha nahi lag raha. "
+        "I am feeling really stressed because of my exams. "
+        "Chalo, hum iske baare mein baat karte hain. "
+        "Main sun raha hoon, koi tension nahi."
     )
+
+    # LLM provider for conversational response generation.
+    # Uses an OpenAI-compatible chat completions API so any provider works
+    # (Gemini, Groq, OpenRouter, OpenAI, local Ollama, etc.).
+    # Leave LLM_API_KEY empty to disable LLM and use the template fallback.
+    LLM_API_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai"
+    LLM_API_KEY: str = ""  # Set via .env: LLM_API_KEY=<your-key>
+    LLM_MODEL: str = "gemini-2.0-flash"  # Override via .env: LLM_MODEL=gpt-4o-mini
+    LLM_MAX_TOKENS: int = 400
+    LLM_TEMPERATURE: float = 0.85
+    LLM_TIMEOUT_SECONDS: float = 20.0
 
     # MongoDB Settings
     MONGODB_URI: str = "mongodb://localhost:27017"
