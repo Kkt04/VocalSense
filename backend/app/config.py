@@ -59,6 +59,21 @@ class Settings(BaseSettings):
         "Yaar, mujhe kal presentation complete karna hai."
     )
 
+    # MongoDB Settings
+    MONGODB_URI: str = "mongodb://localhost:27017"
+    MONGODB_DB_NAME: str = "vocalsense"
+
+    # Emotion Recognition Deep Learning & Traditional ML
+    EMOTION_MODEL_TYPE: str = "wav2vec2"  # "wav2vec2", "hubert", "traditional_svm"
+    WAV2VEC2_CHECKPOINT: str = "facebook/wav2vec2-base"
+    HUBERT_CHECKPOINT: str = "facebook/hubert-base-ls960"
+    EMOTION_DEVICE: str = "auto"          # "auto", "mps", "cuda", "cpu"
+    EMOTION_CONFIDENCE_THRESHOLD: float = 0.30
+    EMOTION_SAVED_MODELS_DIR: str = "backend/saved_models"
+
+    # Text-to-Speech
+    ENABLE_TTS: bool = True
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

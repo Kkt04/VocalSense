@@ -14,6 +14,8 @@ import {
   checkEmotionHealth,
   transcribeAudio,
   predictEmotion,
+  sendConversationMessage,
+  checkConversationHealth,
   TranscriptionResponse,
   EmotionPredictionResponse,
 } from '../services/api';
@@ -70,11 +72,19 @@ const STATUS: Record<Phase, string> = {
 
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
+const STYLE_MAP: Record<StyleId, string> = {
+  listen: 'just_listen',
+  think: 'help_me_think',
+  practical: 'practical_suggestions',
+  distract: 'distract_me',
+};
+
 export default function Conversation() {
+  const [conversationId] = useState<string>(() => 'conv_' + Math.random().toString(36).substring(2, 10));
   const [phase, setPhase] = useState<Phase>('idle');
   const [style, setStyle] = useState<StyleId>('listen');
   const [mode, setMode] = useState<'voice' | 'text'>('voice');
-  const [languagePreference, setLanguagePreference] = useState<'auto' | 'en' | 'hi'>('auto');
+  const [languagePreference, setLanguagePreference] = useState<'auto' | 'en' | 'hi' | 'hinglish' | 'es' | 'fr'>('auto');
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [editing, setEditing] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
@@ -245,13 +255,53 @@ export default function Conversation() {
 
     setPhase('analysing');
 
-    const reply = STYLES.find((s) => s.id === style)!.reply;
-    later(() => {
-      setMsgs((m) => [...m, { id: Date.now() + 1, role: 'ai', text: reply }]);
-      setProgress(0);
-      setPaused(false);
-      setPhase('responding');
-    }, 1800);
+    // Call multilingual emotion-aware conversation response engine
+    sendConversationMessage({
+      transcript: transcriptText,
+      conversation_id: conversationId,
+      detected_language: sttResult.detected_language,
+      language_preference: languagePreference === 'auto' ? undefined : languagePreference,
+      conversation_style: STYLE_MAP[style],
+      emotion_estimate: emoResult ? {
+        predicted_emotion: emoResult.emotion_label,
+        probabilities: emoResult.probabilities,
+        is_reliable: emoResult.is_reliable,
+      } : undefined,
+      synthesize_speech: !spkMuted,
+    })
+      .then((convRes) => {
+        setMsgs((m) => [
+          ...m,
+          {
+            id: Date.now() + 1,
+            role: 'ai',
+            text: convRes.response,
+            detectedLanguage: convRes.response_language,
+          },
+        ]);
+
+        // Synthesize TTS audio if available
+        if (convRes.tts_audio_base64 && !spkMuted) {
+          try {
+            const audio = new Audio(`data:${convRes.audio_mime_type || 'audio/mpeg'};base64,${convRes.tts_audio_base64}`);
+            audio.play().catch((e) => console.log('Audio autoplay info:', e));
+          } catch (audioErr) {
+            console.warn('TTS playback issue:', audioErr);
+          }
+        }
+
+        setProgress(0);
+        setPaused(false);
+        setPhase('responding');
+      })
+      .catch((convErr) => {
+        console.warn('Conversation API error, applying safe fallback:', convErr);
+        const fallbackReply = STYLES.find((s) => s.id === style)!.reply;
+        setMsgs((m) => [...m, { id: Date.now() + 1, role: 'ai', text: fallbackReply }]);
+        setProgress(0);
+        setPaused(false);
+        setPhase('responding');
+      });
   };
 
   // Stop recording and process with both Whisper STT and Emotion SER
@@ -286,15 +336,23 @@ export default function Conversation() {
           },
           is_reliable: true,
           interpretation_notice: "Identifies measurable acoustic patterns in voice.",
-          model_used: "Support Vector Machine (RAVDESS)",
+          model_used: "Wav2Vec2 Deep Speech Classifier",
           processing_time_sec: 0.08,
         });
         setPhase('analysing');
       }, 1200);
 
-      const reply = STYLES.find((s) => s.id === style)!.reply;
       later(() => {
-        setMsgs((m) => [...m, { id: Date.now() + 1, role: 'ai', text: reply }]);
+        const demoHinglishReply =
+          style === 'listen'
+            ? "Arey, main samajh sakta hoon ki presentation ka stress ho raha hai. Tension mat lo, take your time, main sun raha hoon."
+            : style === 'think'
+            ? "Chalo isko step-by-step dekhte hain. Presentation ka kaunsa slide ya topic sabse zyada tricky lag raha hai?"
+            : style === 'practical'
+            ? "Pehle ek deep breath lo aur 5 minute ka break lo. Aaj bas slides ka outline finish karo, rehearsal kal subah karenge."
+            : "Chalo thoda mind distract karte hain! Fun fact: Sea otters sote waqt ek doosre ka haath pakad ke sote hain. Tumhara favourite comfort show kaunsa hai?";
+
+        setMsgs((m) => [...m, { id: Date.now() + 1, role: 'ai', text: demoHinglishReply, detectedLanguage: 'hinglish' }]);
         setProgress(0);
         setPaused(false);
         setPhase('responding');
@@ -436,7 +494,7 @@ export default function Conversation() {
         <div className="flex items-center gap-2">
           {/* Language selector */}
           <div className="inline-flex rounded-full bg-ink/5 p-0.5 text-xs">
-            {(['auto', 'en', 'hi'] as const).map((l) => (
+            {(['auto', 'en', 'hi', 'hinglish', 'es', 'fr'] as const).map((l) => (
               <button
                 key={l}
                 type="button"
@@ -446,9 +504,21 @@ export default function Conversation() {
                     ? 'bg-accent text-onaccent shadow-xs'
                     : 'text-muted hover:text-ink'
                 }`}
-                title={`Language: ${l === 'auto' ? 'Auto-Detect (EN/HI/Hinglish)' : l === 'en' ? 'English' : 'Hindi'}`}
+                title={`Language: ${
+                  l === 'auto'
+                    ? 'Auto-Detect (EN/HI/Hinglish/ES/FR)'
+                    : l === 'en'
+                    ? 'English'
+                    : l === 'hi'
+                    ? 'Hindi'
+                    : l === 'hinglish'
+                    ? 'Hinglish'
+                    : l === 'es'
+                    ? 'Spanish'
+                    : 'French'
+                }`}
               >
-                {l === 'auto' ? 'Auto' : l === 'en' ? 'EN' : 'HI'}
+                {l === 'auto' ? 'Auto' : l === 'en' ? 'EN' : l === 'hi' ? 'HI' : l === 'hinglish' ? 'Hinglish' : l.toUpperCase()}
               </button>
             ))}
           </div>

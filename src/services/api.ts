@@ -231,12 +231,14 @@ export async function transcribeAudio(
  */
 export async function predictEmotion(
   audioData: Blob | File,
-  filename = 'recording.webm'
+  filename = 'recording.webm',
+  modelType?: 'wav2vec2' | 'hubert' | 'traditional_svm'
 ): Promise<EmotionPredictionResponse> {
   const formData = new FormData();
   formData.append('file', audioData, filename);
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/emotion/predict`, {
+  const queryParams = modelType ? `?model_type=${encodeURIComponent(modelType)}` : '';
+  const res = await fetch(`${API_BASE_URL}/api/v1/emotion/predict${queryParams}`, {
     method: 'POST',
     body: formData,
   });
@@ -252,6 +254,102 @@ export async function predictEmotion(
   }
 
   return json as EmotionPredictionResponse;
+}
+
+export interface ConversationRespondRequest {
+  transcript: string;
+  conversation_id?: string;
+  user_id?: string;
+  detected_language?: string;
+  language_code?: string;
+  language_preference?: string;
+  conversation_style?: string;
+  emotion_estimate?: Record<string, unknown>;
+  history?: { role: string; text: string; language?: string }[];
+  synthesize_speech?: boolean;
+}
+
+export interface ConversationRespondResponse {
+  response: string;
+  response_language: string;
+  language_code: string;
+  conversation_style: string;
+  conversation_id: string;
+  user_id?: string;
+  tts_available: boolean;
+  tts_audio_base64?: string;
+  audio_mime_type?: string;
+  validation_passed: boolean;
+  code_switching_preserved: boolean;
+  error?: string;
+}
+
+/**
+ * Request language-aware conversational response from VocalSense companion engine.
+ */
+export async function sendConversationMessage(
+  payload: ConversationRespondRequest
+): Promise<ConversationRespondResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/v1/conversation/respond`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    const errorMsg =
+      typeof json.detail === 'object' && json.detail?.error
+        ? json.detail.error
+        : json.detail || json.error || `Conversation failed with status ${res.status}`;
+    throw new Error(errorMsg);
+  }
+
+  return json as ConversationRespondResponse;
+}
+
+/**
+ * Retrieve chronological conversation history from MongoDB.
+ */
+export async function getConversationHistory(
+  conversationId: string,
+  limit = 50,
+  skip = 0
+): Promise<{ conversation_id: string; messages: any[]; count: number }> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/v1/conversation/history/${encodeURIComponent(conversationId)}?limit=${limit}&skip=${skip}`,
+    {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    }
+  );
+  if (!res.ok) {
+    throw new Error(`Failed to fetch history: status ${res.status}`);
+  }
+  return await res.json();
+}
+
+/**
+ * Check conversation service health and supported languages.
+ */
+export async function checkConversationHealth(): Promise<{ online: boolean; data?: any; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/conversation/health`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      return { online: false, error: `Conversation health failed with status ${res.status}` };
+    }
+    const data = await res.json();
+    return { online: true, data };
+  } catch (err: unknown) {
+    return { online: false, error: err instanceof Error ? err.message : 'Conversation service unreachable' };
+  }
 }
 
 export { API_BASE_URL };

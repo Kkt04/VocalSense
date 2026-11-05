@@ -1,0 +1,670 @@
+{
+  "svm_baseline": {
+    "model_name": "Support Vector Machine",
+    "accuracy": 0.4903,
+    "macro_f1": 0.4794,
+    "weighted_f1": 0.4882,
+    "macro_precision": 0.4885,
+    "macro_recall": 0.4779,
+    "fold_accuracies": [
+      0.4767,
+      0.51,
+      0.5533,
+      0.46,
+      0.4417
+    ],
+    "fold_macro_f1s": [
+      0.4576,
+      0.4913,
+      0.5499,
+      0.4445,
+      0.4297
+    ],
+    "per_class": {
+      "angry": {
+        "precision": 0.6068,
+        "recall": 0.651,
+        "f1": 0.6281,
+        "support": 192
+      },
+      "calm": {
+        "precision": 0.5876,
+        "recall": 0.5938,
+        "f1": 0.5907,
+        "support": 192
+      },
+      "disgust": {
+        "precision": 0.5084,
+        "recall": 0.6302,
+        "f1": 0.5628,
+        "support": 192
+      },
+      "fearful": {
+        "precision": 0.3636,
+        "recall": 0.3958,
+        "f1": 0.3791,
+        "support": 192
+      },
+      "happy": {
+        "precision": 0.3881,
+        "recall": 0.4062,
+        "f1": 0.3969,
+        "support": 192
+      },
+      "neutral": {
+        "precision": 0.4308,
+        "recall": 0.2917,
+        "f1": 0.3478,
+        "support": 96
+      },
+      "sad": {
+        "precision": 0.3563,
+        "recall": 0.3229,
+        "f1": 0.3388,
+        "support": 192
+      },
+      "surprised": {
+        "precision": 0.6667,
+        "recall": 0.5312,
+        "f1": 0.5913,
+        "support": 192
+      }
+    },
+    "confusion_matrix": [
+      [
+        125,
+        2,
+        25,
+        11,
+        12,
+        1,
+        5,
+        11
+      ],
+      [
+        1,
+        114,
+        15,
+        20,
+        3,
+        13,
+        25,
+        1
+      ],
+      [
+        24,
+        4,
+        121,
+        6,
+        11,
+        2,
+        16,
+        8
+      ],
+      [
+        18,
+        11,
+        11,
+        76,
+        45,
+        2,
+        24,
+        5
+      ],
+      [
+        17,
+        8,
+        15,
+        41,
+        78,
+        2,
+        12,
+        19
+      ],
+      [
+        0,
+        24,
+        8,
+        9,
+        8,
+        28,
+        18,
+        1
+      ],
+      [
+        7,
+        30,
+        27,
+        25,
+        21,
+        14,
+        62,
+        6
+      ],
+      [
+        14,
+        1,
+        16,
+        21,
+        23,
+        3,
+        12,
+        102
+      ]
+    ],
+    "classes": [
+      "angry",
+      "calm",
+      "disgust",
+      "fearful",
+      "happy",
+      "neutral",
+      "sad",
+      "surprised"
+    ],
+    "eval_time_sec": 1.37,
+    "sample_count": 1440,
+    "feature_representation": "43 Acoustic Features (MFCC, F0, RMS, Spectral, Pauses)"
+  },
+  "random_forest": {
+    "model_name": "Random Forest",
+    "accuracy": 0.4597,
+    "macro_f1": 0.4288,
+    "weighted_f1": 0.4462,
+    "macro_precision": 0.4322,
+    "macro_recall": 0.4388,
+    "fold_accuracies": [
+      0.4033,
+      0.4367,
+      0.53,
+      0.45,
+      0.4833
+    ],
+    "fold_macro_f1s": [
+      0.3459,
+      0.4082,
+      0.4929,
+      0.4216,
+      0.4728
+    ],
+    "per_class": {
+      "angry": {
+        "precision": 0.5707,
+        "recall": 0.5885,
+        "f1": 0.5795,
+        "support": 192
+      },
+      "calm": {
+        "precision": 0.491,
+        "recall": 0.7083,
+        "f1": 0.58,
+        "support": 192
+      },
+      "disgust": {
+        "precision": 0.4585,
+        "recall": 0.5469,
+        "f1": 0.4988,
+        "support": 192
+      },
+      "fearful": {
+        "precision": 0.4224,
+        "recall": 0.3542,
+        "f1": 0.3853,
+        "support": 192
+      },
+      "happy": {
+        "precision": 0.4231,
+        "recall": 0.401,
+        "f1": 0.4118,
+        "support": 192
+      },
+      "neutral": {
+        "precision": 0.25,
+        "recall": 0.125,
+        "f1": 0.1667,
+        "support": 96
+      },
+      "sad": {
+        "precision": 0.3194,
+        "recall": 0.2396,
+        "f1": 0.2738,
+        "support": 192
+      },
+      "surprised": {
+        "precision": 0.5224,
+        "recall": 0.5469,
+        "f1": 0.5344,
+        "support": 192
+      }
+    },
+    "confusion_matrix": [
+      [
+        113,
+        6,
+        21,
+        15,
+        10,
+        0,
+        7,
+        20
+      ],
+      [
+        0,
+        136,
+        14,
+        2,
+        3,
+        16,
+        16,
+        5
+      ],
+      [
+        22,
+        19,
+        105,
+        6,
+        10,
+        3,
+        12,
+        15
+      ],
+      [
+        17,
+        17,
+        20,
+        68,
+        32,
+        0,
+        23,
+        15
+      ],
+      [
+        20,
+        10,
+        20,
+        32,
+        77,
+        5,
+        9,
+        19
+      ],
+      [
+        0,
+        31,
+        8,
+        1,
+        15,
+        12,
+        21,
+        8
+      ],
+      [
+        10,
+        52,
+        21,
+        22,
+        16,
+        11,
+        46,
+        14
+      ],
+      [
+        16,
+        6,
+        20,
+        15,
+        19,
+        1,
+        10,
+        105
+      ]
+    ],
+    "classes": [
+      "angry",
+      "calm",
+      "disgust",
+      "fearful",
+      "happy",
+      "neutral",
+      "sad",
+      "surprised"
+    ],
+    "eval_time_sec": 1.03,
+    "sample_count": 1440,
+    "feature_representation": "43 Acoustic Features"
+  },
+  "wav2vec2": {
+    "model_name": "Wav2Vec2 (facebook/wav2vec2-base)",
+    "accuracy": 0.6,
+    "macro_f1": 0.5914,
+    "weighted_f1": 0.6014,
+    "macro_precision": 0.5929,
+    "macro_recall": 0.5911,
+    "fold_accuracies": [
+      0.5833,
+      0.56,
+      0.5733,
+      0.6633,
+      0.625
+    ],
+    "fold_macro_f1s": [
+      0.5835,
+      0.5498,
+      0.5666,
+      0.6433,
+      0.6223
+    ],
+    "per_class": {
+      "angry": {
+        "precision": 0.7421,
+        "recall": 0.7344,
+        "f1": 0.7382,
+        "support": 192
+      },
+      "calm": {
+        "precision": 0.672,
+        "recall": 0.651,
+        "f1": 0.6614,
+        "support": 192
+      },
+      "disgust": {
+        "precision": 0.6957,
+        "recall": 0.6667,
+        "f1": 0.6809,
+        "support": 192
+      },
+      "fearful": {
+        "precision": 0.6089,
+        "recall": 0.6406,
+        "f1": 0.6244,
+        "support": 192
+      },
+      "happy": {
+        "precision": 0.5196,
+        "recall": 0.4844,
+        "f1": 0.5013,
+        "support": 192
+      },
+      "neutral": {
+        "precision": 0.4272,
+        "recall": 0.4583,
+        "f1": 0.4422,
+        "support": 96
+      },
+      "sad": {
+        "precision": 0.4541,
+        "recall": 0.5156,
+        "f1": 0.4829,
+        "support": 192
+      },
+      "surprised": {
+        "precision": 0.6236,
+        "recall": 0.5781,
+        "f1": 0.6,
+        "support": 192
+      }
+    },
+    "confusion_matrix": [
+      [
+        141,
+        0,
+        20,
+        4,
+        11,
+        1,
+        5,
+        10
+      ],
+      [
+        2,
+        125,
+        5,
+        1,
+        12,
+        19,
+        27,
+        1
+      ],
+      [
+        15,
+        5,
+        128,
+        6,
+        6,
+        6,
+        20,
+        6
+      ],
+      [
+        8,
+        2,
+        0,
+        123,
+        20,
+        0,
+        20,
+        19
+      ],
+      [
+        10,
+        10,
+        6,
+        25,
+        93,
+        10,
+        18,
+        20
+      ],
+      [
+        3,
+        11,
+        4,
+        2,
+        9,
+        44,
+        20,
+        3
+      ],
+      [
+        0,
+        32,
+        13,
+        16,
+        9,
+        15,
+        99,
+        8
+      ],
+      [
+        11,
+        1,
+        8,
+        25,
+        19,
+        8,
+        9,
+        111
+      ]
+    ],
+    "classes": [
+      "angry",
+      "calm",
+      "disgust",
+      "fearful",
+      "happy",
+      "neutral",
+      "sad",
+      "surprised"
+    ],
+    "eval_time_sec": 1.16,
+    "sample_count": 1440,
+    "feature_representation": "768 Deep Speech Embeddings (Wav2Vec2 Base)"
+  },
+  "hubert": {
+    "model_name": "HuBERT (facebook/hubert-base-ls960)",
+    "accuracy": 0.6701,
+    "macro_f1": 0.6666,
+    "weighted_f1": 0.6732,
+    "macro_precision": 0.672,
+    "macro_recall": 0.6647,
+    "fold_accuracies": [
+      0.5933,
+      0.7033,
+      0.68,
+      0.7433,
+      0.6208
+    ],
+    "fold_macro_f1s": [
+      0.5857,
+      0.6954,
+      0.6776,
+      0.7298,
+      0.6269
+    ],
+    "per_class": {
+      "angry": {
+        "precision": 0.7617,
+        "recall": 0.7656,
+        "f1": 0.7636,
+        "support": 192
+      },
+      "calm": {
+        "precision": 0.6667,
+        "recall": 0.7188,
+        "f1": 0.6917,
+        "support": 192
+      },
+      "disgust": {
+        "precision": 0.8,
+        "recall": 0.6667,
+        "f1": 0.7273,
+        "support": 192
+      },
+      "fearful": {
+        "precision": 0.7771,
+        "recall": 0.7083,
+        "f1": 0.7411,
+        "support": 192
+      },
+      "happy": {
+        "precision": 0.6214,
+        "recall": 0.6667,
+        "f1": 0.6432,
+        "support": 192
+      },
+      "neutral": {
+        "precision": 0.5545,
+        "recall": 0.5833,
+        "f1": 0.5685,
+        "support": 96
+      },
+      "sad": {
+        "precision": 0.473,
+        "recall": 0.5469,
+        "f1": 0.5072,
+        "support": 192
+      },
+      "surprised": {
+        "precision": 0.7216,
+        "recall": 0.6615,
+        "f1": 0.6902,
+        "support": 192
+      }
+    },
+    "confusion_matrix": [
+      [
+        147,
+        0,
+        5,
+        4,
+        14,
+        4,
+        8,
+        10
+      ],
+      [
+        0,
+        138,
+        2,
+        1,
+        3,
+        20,
+        27,
+        1
+      ],
+      [
+        13,
+        8,
+        128,
+        1,
+        11,
+        3,
+        25,
+        3
+      ],
+      [
+        10,
+        4,
+        3,
+        136,
+        12,
+        1,
+        16,
+        10
+      ],
+      [
+        9,
+        6,
+        5,
+        8,
+        128,
+        3,
+        15,
+        18
+      ],
+      [
+        2,
+        22,
+        1,
+        1,
+        1,
+        56,
+        11,
+        2
+      ],
+      [
+        3,
+        29,
+        9,
+        10,
+        17,
+        14,
+        105,
+        5
+      ],
+      [
+        9,
+        0,
+        7,
+        14,
+        20,
+        0,
+        15,
+        127
+      ]
+    ],
+    "classes": [
+      "angry",
+      "calm",
+      "disgust",
+      "fearful",
+      "happy",
+      "neutral",
+      "sad",
+      "surprised"
+    ],
+    "eval_time_sec": 0.52,
+    "sample_count": 1440,
+    "feature_representation": "768 Deep Speech Embeddings (HuBERT Base)"
+  }
+}

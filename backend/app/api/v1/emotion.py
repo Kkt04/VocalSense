@@ -1,4 +1,5 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, status
+from typing import Optional
+from fastapi import APIRouter, UploadFile, File, Query, HTTPException, status
 from backend.app.schemas.emotion import (
     EmotionPredictionResponse,
     EmotionHealthResponse,
@@ -24,9 +25,9 @@ async def get_emotion_health() -> EmotionHealthResponse:
     service = get_emotion_service()
     return EmotionHealthResponse(
         status="healthy" if service.is_ready() else "degraded",
-        service="Speech Emotion Recognition Service (RAVDESS Baseline)",
+        service=f"Speech Emotion Recognition ({service.model_type.upper()})",
         model_loaded=service.is_ready(),
-        model_name=service.metadata.get("model_name", "Not Loaded"),
+        model_name=service.get_active_model_name(),
         classes=service.classes,
     )
 
@@ -42,10 +43,12 @@ async def get_emotion_health() -> EmotionHealthResponse:
 )
 async def predict_emotion_pattern(
     file: UploadFile = File(..., description="Audio recording to analyze (WAV, WebM, MP3, M4A, OGG)"),
+    model_type: Optional[str] = Query(None, description="Optional model selector: 'wav2vec2', 'hubert', or 'traditional_svm'"),
 ) -> EmotionPredictionResponse:
     """
     Analyze vocal acoustic patterns (pitch, energy, spectral features, pauses)
-    and predict an emotion pattern using the trained ML model.
+    and predict an emotion pattern using deep speech representations (Wav2Vec2 / HuBERT)
+    or traditional ML baseline.
 
     Returns the predicted pattern, probability distribution, and physical vocal traits.
     """
@@ -66,7 +69,7 @@ async def predict_emotion_pattern(
     # 2. Extract features and infer emotion
     try:
         service = get_emotion_service()
-        response = service.predict_emotion(content)
+        response = service.predict_emotion(content, override_model_type=model_type)
         return response
     except AudioPreprocessingError as e:
         raise HTTPException(

@@ -1,0 +1,21 @@
+{
+  "model_type": "hubert",
+  "classifier_type": "logistic_regression",
+  "classes": [
+    "angry",
+    "calm",
+    "disgust",
+    "fearful",
+    "happy",
+    "neutral",
+    "sad",
+    "surprised"
+  ],
+  "confidence_threshold": 0.3,
+  "saved_at": 1793878279.327731,
+  "accuracy": 0.6701,
+  "macro_f1": 0.6666,
+  "weighted_f1": 0.6732,
+  "checkpoint": "facebook/hubert-base-ls960",
+  "hidden_size": 768
+}

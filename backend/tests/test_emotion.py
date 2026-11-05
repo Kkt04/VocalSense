@@ -107,7 +107,7 @@ def test_abstention_on_unreliable_prediction():
     # Force an unreasonably high threshold to verify abstention behavior
     original_threshold = service.confidence_threshold
     try:
-        service.confidence_threshold = 0.999  # impossible confidence
+        service.confidence_threshold = 1.05  # impossible confidence (> 1.0)
         # 0.5s soft noise
         noise = np.random.randn(8000).astype(np.float32) * 0.01
         res = service.predict_emotion(noise)

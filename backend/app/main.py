@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,12 +8,24 @@ from backend.app.api.routes_health import router as health_router
 from backend.app.api.routes_audio import router as audio_router
 from backend.app.api.v1.transcription import router as transcription_router
 from backend.app.api.v1.emotion import router as emotion_router
+from backend.app.api.v1.conversation import router as conversation_router
+from backend.app.db.mongodb import mongodb_manager
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger("vocalsense")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan context manager handling MongoDB connections."""
+    logger.info("Initializing MongoDB connection manager...")
+    await mongodb_manager.connect()
+    yield
+    logger.info("Closing MongoDB connection manager...")
+    await mongodb_manager.close()
 
 
 def create_app() -> FastAPI:
@@ -26,6 +39,7 @@ def create_app() -> FastAPI:
         ),
         docs_url="/docs",
         redoc_url="/redoc",
+        lifespan=lifespan,
     )
 
     # Configure CORS for frontend access
@@ -56,6 +70,7 @@ def create_app() -> FastAPI:
     app.include_router(audio_router, prefix="/api")
     app.include_router(transcription_router, prefix="/api/v1")
     app.include_router(emotion_router, prefix="/api/v1")
+    app.include_router(conversation_router, prefix="/api/v1")
 
     @app.get("/", tags=["Root"])
     async def root():

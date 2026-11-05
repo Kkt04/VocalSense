@@ -1,0 +1,21 @@
+{
+  "model_type": "wav2vec2",
+  "classifier_type": "logistic_regression",
+  "classes": [
+    "angry",
+    "calm",
+    "disgust",
+    "fearful",
+    "happy",
+    "neutral",
+    "sad",
+    "surprised"
+  ],
+  "confidence_threshold": 0.3,
+  "saved_at": 1793878203.5186791,
+  "accuracy": 0.6,
+  "macro_f1": 0.5914,
+  "weighted_f1": 0.6014,
+  "checkpoint": "facebook/wav2vec2-base",
+  "hidden_size": 768
+}
