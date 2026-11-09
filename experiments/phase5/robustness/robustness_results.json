@@ -1,0 +1,259 @@
+{
+  "Clean Baseline": {
+    "SVM": {
+      "macro_f1": 0.95,
+      "accuracy": 0.95,
+      "stability": 1.0
+    },
+    "RF": {
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "stability": 1.0
+    },
+    "HuBERT": {
+      "macro_f1": 0.9142,
+      "accuracy": 0.925,
+      "stability": 1.0
+    }
+  },
+  "Noise SNR 20dB (Mild)": {
+    "SVM": {
+      "macro_f1": 0.1352,
+      "accuracy": 0.2,
+      "stability": 0.225,
+      "f1_retention_pct": 14.24
+    },
+    "RF": {
+      "macro_f1": 0.1096,
+      "accuracy": 0.2,
+      "stability": 0.2,
+      "f1_retention_pct": 10.96
+    },
+    "HuBERT": {
+      "macro_f1": 0.3339,
+      "accuracy": 0.4,
+      "stability": 0.475,
+      "f1_retention_pct": 36.53
+    }
+  },
+  "Noise SNR 10dB (Moderate)": {
+    "SVM": {
+      "macro_f1": 0.0278,
+      "accuracy": 0.125,
+      "stability": 0.125,
+      "f1_retention_pct": 2.92
+    },
+    "RF": {
+      "macro_f1": 0.0617,
+      "accuracy": 0.15,
+      "stability": 0.15,
+      "f1_retention_pct": 6.17
+    },
+    "HuBERT": {
+      "macro_f1": 0.2487,
+      "accuracy": 0.325,
+      "stability": 0.35,
+      "f1_retention_pct": 27.2
+    }
+  },
+  "Noise SNR 0dB (Severe)": {
+    "SVM": {
+      "macro_f1": 0.0278,
+      "accuracy": 0.125,
+      "stability": 0.125,
+      "f1_retention_pct": 2.92
+    },
+    "RF": {
+      "macro_f1": 0.0278,
+      "accuracy": 0.125,
+      "stability": 0.125,
+      "f1_retention_pct": 2.78
+    },
+    "HuBERT": {
+      "macro_f1": 0.0604,
+      "accuracy": 0.15,
+      "stability": 0.15,
+      "f1_retention_pct": 6.61
+    }
+  },
+  "Gain -6dB (Low Volume)": {
+    "SVM": {
+      "macro_f1": 0.927,
+      "accuracy": 0.925,
+      "stability": 0.975,
+      "f1_retention_pct": 97.58
+    },
+    "RF": {
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "stability": 1.0,
+      "f1_retention_pct": 100.0
+    },
+    "HuBERT": {
+      "macro_f1": 0.8154,
+      "accuracy": 0.825,
+      "stability": 0.9,
+      "f1_retention_pct": 89.19
+    }
+  },
+  "Gain -12dB (Very Low)": {
+    "SVM": {
+      "macro_f1": 0.8706,
+      "accuracy": 0.875,
+      "stability": 0.925,
+      "f1_retention_pct": 91.64
+    },
+    "RF": {
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "stability": 1.0,
+      "f1_retention_pct": 100.0
+    },
+    "HuBERT": {
+      "macro_f1": 0.6694,
+      "accuracy": 0.7,
+      "stability": 0.775,
+      "f1_retention_pct": 73.22
+    }
+  },
+  "Gain +6dB (High Volume)": {
+    "SVM": {
+      "macro_f1": 0.9747,
+      "accuracy": 0.975,
+      "stability": 0.975,
+      "f1_retention_pct": 102.6
+    },
+    "RF": {
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "stability": 1.0,
+      "f1_retention_pct": 100.0
+    },
+    "HuBERT": {
+      "macro_f1": 0.9227,
+      "accuracy": 0.925,
+      "stability": 0.95,
+      "f1_retention_pct": 100.92
+    }
+  },
+  "Reverb Mild (0.2s)": {
+    "SVM": {
+      "macro_f1": 0.7733,
+      "accuracy": 0.775,
+      "stability": 0.825,
+      "f1_retention_pct": 81.4
+    },
+    "RF": {
+      "macro_f1": 0.7468,
+      "accuracy": 0.75,
+      "stability": 0.75,
+      "f1_retention_pct": 74.68
+    },
+    "HuBERT": {
+      "macro_f1": 0.5545,
+      "accuracy": 0.6,
+      "stability": 0.65,
+      "f1_retention_pct": 60.65
+    }
+  },
+  "Reverb Cavernous (0.5s)": {
+    "SVM": {
+      "macro_f1": 0.5614,
+      "accuracy": 0.575,
+      "stability": 0.6,
+      "f1_retention_pct": 59.1
+    },
+    "RF": {
+      "macro_f1": 0.4752,
+      "accuracy": 0.525,
+      "stability": 0.525,
+      "f1_retention_pct": 47.52
+    },
+    "HuBERT": {
+      "macro_f1": 0.3727,
+      "accuracy": 0.425,
+      "stability": 0.45,
+      "f1_retention_pct": 40.76
+    }
+  },
+  "Telephony 8kHz": {
+    "SVM": {
+      "macro_f1": 0.0648,
+      "accuracy": 0.15,
+      "stability": 0.15,
+      "f1_retention_pct": 6.82
+    },
+    "RF": {
+      "macro_f1": 0.1329,
+      "accuracy": 0.25,
+      "stability": 0.25,
+      "f1_retention_pct": 13.29
+    },
+    "HuBERT": {
+      "macro_f1": 0.6837,
+      "accuracy": 0.7,
+      "stability": 0.725,
+      "f1_retention_pct": 74.78
+    }
+  },
+  "Duration 2.0s": {
+    "SVM": {
+      "macro_f1": 0.5062,
+      "accuracy": 0.5,
+      "stability": 0.475,
+      "f1_retention_pct": 53.29
+    },
+    "RF": {
+      "macro_f1": 0.4219,
+      "accuracy": 0.475,
+      "stability": 0.475,
+      "f1_retention_pct": 42.19
+    },
+    "HuBERT": {
+      "macro_f1": 0.3195,
+      "accuracy": 0.375,
+      "stability": 0.375,
+      "f1_retention_pct": 34.95
+    }
+  },
+  "Duration 1.0s": {
+    "SVM": {
+      "macro_f1": 0.0278,
+      "accuracy": 0.125,
+      "stability": 0.125,
+      "f1_retention_pct": 2.92
+    },
+    "RF": {
+      "macro_f1": 0.0278,
+      "accuracy": 0.125,
+      "stability": 0.125,
+      "f1_retention_pct": 2.78
+    },
+    "HuBERT": {
+      "macro_f1": 0.1167,
+      "accuracy": 0.15,
+      "stability": 0.125,
+      "f1_retention_pct": 12.77
+    }
+  },
+  "Duration 0.5s (Brief)": {
+    "SVM": {
+      "macro_f1": 0.0278,
+      "accuracy": 0.125,
+      "stability": 0.125,
+      "f1_retention_pct": 2.92
+    },
+    "RF": {
+      "macro_f1": 0.0291,
+      "accuracy": 0.125,
+      "stability": 0.125,
+      "f1_retention_pct": 2.91
+    },
+    "HuBERT": {
+      "macro_f1": 0.0233,
+      "accuracy": 0.1,
+      "stability": 0.1,
+      "f1_retention_pct": 2.54
+    }
+  }
+}

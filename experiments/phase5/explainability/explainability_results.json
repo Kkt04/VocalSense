@@ -1,0 +1,99 @@
+{
+  "top_features": {
+    "feature_names": [
+      "mfcc_5_std",
+      "pitch_f0_mean",
+      "mfcc_3_mean",
+      "pitch_f0_std",
+      "mfcc_4_std",
+      "mfcc_2_std",
+      "mfcc_13_std",
+      "spectral_rolloff_std",
+      "mfcc_1_std",
+      "mfcc_2_mean",
+      "mfcc_1_mean",
+      "mfcc_8_mean",
+      "mfcc_7_mean",
+      "spectral_rolloff_mean",
+      "mfcc_7_std"
+    ],
+    "rf_gini_importance": [
+      0.0388,
+      0.0368,
+      0.0338,
+      0.0334,
+      0.033,
+      0.0308,
+      0.0285,
+      0.028,
+      0.0275,
+      0.0265,
+      0.0261,
+      0.0256,
+      0.0255,
+      0.0253,
+      0.0252
+    ],
+    "svm_permutation_importance": [
+      -0.0058,
+      0.0208,
+      -0.0017,
+      0.0092,
+      0.0108,
+      -0.0042,
+      0.0008,
+      0.0075,
+      -0.0067,
+      -0.0167,
+      0.0267,
+      0.0067,
+      0.015,
+      -0.0,
+      0.0042
+    ]
+  },
+  "feature_group_ablation": {
+    "MFCC (Coefficients 1-13 Mean & Std)": {
+      "features_removed": 26,
+      "ablated_macro_f1": 0.3364,
+      "f1_drop": 0.0756,
+      "f1_drop_pct": 18.35
+    },
+    "Pitch / F0 Contour (Prosody)": {
+      "features_removed": 5,
+      "ablated_macro_f1": 0.4164,
+      "f1_drop": -0.0043,
+      "f1_drop_pct": -1.04
+    },
+    "RMS Energy (Vocal Effort)": {
+      "features_removed": 3,
+      "ablated_macro_f1": 0.4373,
+      "f1_drop": -0.0253,
+      "f1_drop_pct": -6.13
+    },
+    "Spectral (Centroid, Bandwidth, Rolloff)": {
+      "features_removed": 6,
+      "ablated_macro_f1": 0.4077,
+      "f1_drop": 0.0044,
+      "f1_drop_pct": 1.07
+    },
+    "Temporal (Zero Crossing & Pauses)": {
+      "features_removed": 3,
+      "ablated_macro_f1": 0.4272,
+      "f1_drop": -0.0151,
+      "f1_drop_pct": -3.67
+    }
+  },
+  "cluster_metrics": {
+    "silhouette_score": {
+      "acoustic_43": -0.0361,
+      "wav2vec2_768": -0.0337,
+      "hubert_768": -0.0176
+    },
+    "calinski_harabasz_score": {
+      "acoustic_43": 22.69,
+      "wav2vec2_768": 28.82,
+      "hubert_768": 20.85
+    }
+  }
+}

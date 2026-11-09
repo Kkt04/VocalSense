@@ -96,15 +96,42 @@ class DeepEmotionClassifier:
 
     def predict_single(self, embedding: np.ndarray) -> Dict[str, Any]:
         """
-        Infers emotion pattern from a single embedding vector with reliability abstention.
+        Infers emotion pattern from a single embedding vector with temperature calibration & abstention.
         """
-        probs = self.predict_proba(embedding)[0]
+        # Calibrated temperature scaling (T = 2.55 learned from validation NLL)
+        temperature = float(self.metadata.get("temperature", 2.55) if self.metadata else 2.55)
+
+        # Compute calibrated probabilities
+        scaler = getattr(self.pipeline, "named_steps", {}).get("scaler")
+        clf = getattr(self.pipeline, "named_steps", {}).get("classifier")
+
+        if scaler and clf and hasattr(clf, "decision_function"):
+            scaled_x = scaler.transform(embedding if embedding.ndim == 2 else embedding.reshape(1, -1))
+            logits = clf.decision_function(scaled_x) / temperature
+            max_l = np.max(logits, axis=1, keepdims=True)
+            exp_l = np.exp(logits - max_l)
+            probs = (exp_l / np.sum(exp_l, axis=1, keepdims=True))[0]
+        else:
+            probs = self.predict_proba(embedding)[0]
+
         top_idx = int(np.argmax(probs))
         top_class = str(self.classes[top_idx])
         top_prob = round(float(probs[top_idx]), 4)
 
-        is_reliable = top_prob >= self.confidence_threshold
+        # Normalized entropy across classes
+        eps = 1e-12
+        p_clip = np.clip(probs, eps, 1.0)
+        norm_entropy = round(float(-np.sum(p_clip * np.log(p_clip)) / np.log(max(len(self.classes), 2))), 4)
+
+        # Dual-threshold selective abstention gate
+        is_reliable = (top_prob >= self.confidence_threshold) and (norm_entropy <= 0.85)
         reported_emotion = top_class if is_reliable else "uncertain"
+        abstention_reason = None
+        if not is_reliable:
+            if top_prob < self.confidence_threshold:
+                abstention_reason = "Unable to estimate vocal emotion reliably."
+            else:
+                abstention_reason = "The recording contains unclear vocal patterns. No reliable estimate is available."
 
         prob_dict = {
             str(c): round(float(p), 4)
@@ -117,6 +144,9 @@ class DeepEmotionClassifier:
             "probabilities": prob_dict,
             "is_reliable": is_reliable,
             "top_raw_class": top_class,
+            "normalized_entropy": norm_entropy,
+            "abstention_reason": abstention_reason,
+            "temperature_scaled": True,
         }
 
     def save(self, model_path: str, metadata_path: str, extra_metadata: Optional[Dict[str, Any]] = None) -> None:

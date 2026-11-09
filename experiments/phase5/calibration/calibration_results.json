@@ -1,0 +1,233 @@
+{
+  "mean_temperature_T": 2.5493,
+  "fold_temperatures": [
+    3.5148,
+    2.354,
+    2.6148,
+    1.8256,
+    2.4373
+  ],
+  "raw_metrics": {
+    "ece": 0.194,
+    "brier_score": 0.5109
+  },
+  "calibrated_metrics": {
+    "ece": 0.0129,
+    "brier_score": 0.4476,
+    "ece_reduction_pct": 93.34
+  },
+  "recommended_abstention_gate": {
+    "confidence_threshold": 0.35,
+    "entropy_threshold": 0.85,
+    "coverage_pct": 92.71,
+    "abstention_rate_pct": 7.29,
+    "selective_accuracy_pct": 69.89,
+    "selective_risk_pct": 30.11,
+    "abstention_messages": [
+      "Unable to estimate vocal emotion reliably.",
+      "The recording contains unclear vocal patterns. No reliable estimate is available."
+    ]
+  },
+  "tradeoff_curve": [
+    {
+      "confidence_threshold": 0.15,
+      "coverage_pct": 100.0,
+      "abstention_rate_pct": 0.0,
+      "selective_accuracy_pct": 67.01,
+      "selective_risk_pct": 32.99,
+      "accepted_macro_f1": 0.6666
+    },
+    {
+      "confidence_threshold": 0.175,
+      "coverage_pct": 100.0,
+      "abstention_rate_pct": 0.0,
+      "selective_accuracy_pct": 67.01,
+      "selective_risk_pct": 32.99,
+      "accepted_macro_f1": 0.6666
+    },
+    {
+      "confidence_threshold": 0.2,
+      "coverage_pct": 100.0,
+      "abstention_rate_pct": 0.0,
+      "selective_accuracy_pct": 67.01,
+      "selective_risk_pct": 32.99,
+      "accepted_macro_f1": 0.6666
+    },
+    {
+      "confidence_threshold": 0.225,
+      "coverage_pct": 99.72,
+      "abstention_rate_pct": 0.28,
+      "selective_accuracy_pct": 67.13,
+      "selective_risk_pct": 32.87,
+      "accepted_macro_f1": 0.6676
+    },
+    {
+      "confidence_threshold": 0.25,
+      "coverage_pct": 99.24,
+      "abstention_rate_pct": 0.76,
+      "selective_accuracy_pct": 67.32,
+      "selective_risk_pct": 32.68,
+      "accepted_macro_f1": 0.6693
+    },
+    {
+      "confidence_threshold": 0.275,
+      "coverage_pct": 98.54,
+      "abstention_rate_pct": 1.46,
+      "selective_accuracy_pct": 67.72,
+      "selective_risk_pct": 32.28,
+      "accepted_macro_f1": 0.673
+    },
+    {
+      "confidence_threshold": 0.3,
+      "coverage_pct": 97.22,
+      "abstention_rate_pct": 2.78,
+      "selective_accuracy_pct": 68.29,
+      "selective_risk_pct": 31.71,
+      "accepted_macro_f1": 0.6789
+    },
+    {
+      "confidence_threshold": 0.325,
+      "coverage_pct": 95.49,
+      "abstention_rate_pct": 4.51,
+      "selective_accuracy_pct": 68.87,
+      "selective_risk_pct": 31.13,
+      "accepted_macro_f1": 0.6851
+    },
+    {
+      "confidence_threshold": 0.35,
+      "coverage_pct": 92.71,
+      "abstention_rate_pct": 7.29,
+      "selective_accuracy_pct": 69.89,
+      "selective_risk_pct": 30.11,
+      "accepted_macro_f1": 0.6936
+    },
+    {
+      "confidence_threshold": 0.375,
+      "coverage_pct": 89.79,
+      "abstention_rate_pct": 10.21,
+      "selective_accuracy_pct": 71.23,
+      "selective_risk_pct": 28.77,
+      "accepted_macro_f1": 0.7067
+    },
+    {
+      "confidence_threshold": 0.4,
+      "coverage_pct": 86.39,
+      "abstention_rate_pct": 13.61,
+      "selective_accuracy_pct": 72.19,
+      "selective_risk_pct": 27.81,
+      "accepted_macro_f1": 0.7157
+    },
+    {
+      "confidence_threshold": 0.425,
+      "coverage_pct": 84.17,
+      "abstention_rate_pct": 15.83,
+      "selective_accuracy_pct": 72.69,
+      "selective_risk_pct": 27.31,
+      "accepted_macro_f1": 0.7191
+    },
+    {
+      "confidence_threshold": 0.45,
+      "coverage_pct": 80.49,
+      "abstention_rate_pct": 19.51,
+      "selective_accuracy_pct": 74.46,
+      "selective_risk_pct": 25.54,
+      "accepted_macro_f1": 0.7348
+    },
+    {
+      "confidence_threshold": 0.475,
+      "coverage_pct": 75.76,
+      "abstention_rate_pct": 24.24,
+      "selective_accuracy_pct": 76.26,
+      "selective_risk_pct": 23.74,
+      "accepted_macro_f1": 0.7526
+    },
+    {
+      "confidence_threshold": 0.5,
+      "coverage_pct": 72.43,
+      "abstention_rate_pct": 27.57,
+      "selective_accuracy_pct": 77.09,
+      "selective_risk_pct": 22.91,
+      "accepted_macro_f1": 0.7604
+    },
+    {
+      "confidence_threshold": 0.525,
+      "coverage_pct": 68.96,
+      "abstention_rate_pct": 31.04,
+      "selective_accuracy_pct": 78.35,
+      "selective_risk_pct": 21.65,
+      "accepted_macro_f1": 0.7731
+    },
+    {
+      "confidence_threshold": 0.55,
+      "coverage_pct": 65.0,
+      "abstention_rate_pct": 35.0,
+      "selective_accuracy_pct": 79.49,
+      "selective_risk_pct": 20.51,
+      "accepted_macro_f1": 0.7805
+    },
+    {
+      "confidence_threshold": 0.575,
+      "coverage_pct": 62.29,
+      "abstention_rate_pct": 37.71,
+      "selective_accuracy_pct": 80.71,
+      "selective_risk_pct": 19.29,
+      "accepted_macro_f1": 0.7926
+    },
+    {
+      "confidence_threshold": 0.6,
+      "coverage_pct": 59.72,
+      "abstention_rate_pct": 40.28,
+      "selective_accuracy_pct": 81.63,
+      "selective_risk_pct": 18.37,
+      "accepted_macro_f1": 0.8001
+    },
+    {
+      "confidence_threshold": 0.625,
+      "coverage_pct": 56.18,
+      "abstention_rate_pct": 43.82,
+      "selective_accuracy_pct": 83.19,
+      "selective_risk_pct": 16.81,
+      "accepted_macro_f1": 0.8158
+    },
+    {
+      "confidence_threshold": 0.65,
+      "coverage_pct": 53.4,
+      "abstention_rate_pct": 46.6,
+      "selective_accuracy_pct": 83.88,
+      "selective_risk_pct": 16.12,
+      "accepted_macro_f1": 0.8217
+    },
+    {
+      "confidence_threshold": 0.675,
+      "coverage_pct": 50.07,
+      "abstention_rate_pct": 49.93,
+      "selective_accuracy_pct": 84.74,
+      "selective_risk_pct": 15.26,
+      "accepted_macro_f1": 0.8264
+    },
+    {
+      "confidence_threshold": 0.7,
+      "coverage_pct": 47.36,
+      "abstention_rate_pct": 52.64,
+      "selective_accuracy_pct": 85.78,
+      "selective_risk_pct": 14.22,
+      "accepted_macro_f1": 0.8387
+    },
+    {
+      "confidence_threshold": 0.725,
+      "coverage_pct": 45.28,
+      "abstention_rate_pct": 54.72,
+      "selective_accuracy_pct": 86.5,
+      "selective_risk_pct": 13.5,
+      "accepted_macro_f1": 0.8464
+    },
+    {
+      "confidence_threshold": 0.75,
+      "coverage_pct": 42.01,
+      "abstention_rate_pct": 57.99,
+      "selective_accuracy_pct": 88.1,
+      "selective_risk_pct": 11.9,
+      "accepted_macro_f1": 0.8615
+    }
+  ]
+}

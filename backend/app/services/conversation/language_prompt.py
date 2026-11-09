@@ -117,9 +117,9 @@ def build_system_prompt(
                 f"\n\n=== OPTIONAL ACOUSTIC SIGNAL (subtle context only) ===\n"
                 f"The user's voice showed acoustic patterns associated with '{vocal_pattern}'.\n"
                 f"RULES for using this signal:\n"
-                f"- Treat it as a weak, uncertain hint — never a diagnosis.\n"
+                f"- Treat this strictly as an uncertain acoustic signal, not a diagnosis.\n"
+                f"- Never say 'my emotion model detected you are {vocal_pattern}' or claim to know their emotional state.\n"
                 f"- NEVER tell the user 'you seem {vocal_pattern}' or 'your voice sounds {vocal_pattern}'.\n"
-                f"- NEVER claim to know their emotional state from their voice.\n"
                 f"- Prioritize the user's actual words over the acoustic label."
             )
 

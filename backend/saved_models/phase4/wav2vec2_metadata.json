@@ -11,7 +11,8 @@
     "sad",
     "surprised"
   ],
-  "confidence_threshold": 0.3,
+  "confidence_threshold": 0.35,
+  "temperature": 2.549,
   "saved_at": 1793878203.5186791,
   "accuracy": 0.6,
   "macro_f1": 0.5914,

@@ -1,0 +1,189 @@
+{
+  "speech_recognition_metrics": {
+    "en": {
+      "mean_wer": 0.0208,
+      "mean_cer": 0.0037,
+      "sample_count": 3,
+      "samples": [
+        {
+          "category": "English Casual & Conversational",
+          "reference": "I had a really exhausting day at the office and just needed someone to talk to.",
+          "hypothesis": "I had a really exhausting day at the office and just needed someone to talk to.",
+          "wer": 0.0,
+          "cer": 0.0
+        },
+        {
+          "category": "English Complex & Long",
+          "reference": "Sometimes I feel overwhelmed by all the responsibilities at college, but I am trying my best.",
+          "hypothesis": "Sometimes I feel overwhelmed by all the responsibilities at college, but I'm trying my best.",
+          "wer": 0.0625,
+          "cer": 0.011
+        },
+        {
+          "category": "English Short Utterance",
+          "reference": "Can we talk for a minute?",
+          "hypothesis": "Can we talk for a minute?",
+          "wer": 0.0,
+          "cer": 0.0
+        }
+      ]
+    },
+    "hi": {
+      "mean_wer": 0.0222,
+      "mean_cer": 0.0055,
+      "sample_count": 3,
+      "samples": [
+        {
+          "category": "Hindi Emotional Expression",
+          "reference": "\u0906\u091c \u092e\u0941\u091d\u0947 \u092c\u0939\u0941\u0924 \u0905\u0915\u0947\u0932\u093e \u0914\u0930 \u0909\u0926\u093e\u0938 \u092e\u0939\u0938\u0942\u0938 \u0939\u094b \u0930\u0939\u093e \u0939\u0948 \u0938\u092c \u0915\u0941\u091b \u092e\u0941\u0936\u094d\u0915\u093f\u0932 \u0932\u0917 \u0930\u0939\u093e \u0939\u0948\u0964",
+          "hypothesis": "\u0906\u091c \u092e\u0941\u091d\u0947 \u092c\u0939\u0941\u0924 \u0905\u0915\u0947\u0932\u093e \u0914\u0930 \u0909\u0926\u093e\u0938 \u092e\u0939\u0938\u0942\u0938 \u0939\u094b \u0930\u0939\u093e \u0939\u0948 \u0938\u092c \u0915\u0941\u091b \u092e\u0941\u0936\u094d\u0915\u093f\u0932 \u0932\u0917 \u0930\u0939\u093e \u0939\u0948\u0964",
+          "wer": 0.0,
+          "cer": 0.0
+        },
+        {
+          "category": "Hindi Daily Conversational",
+          "reference": "\u0915\u0932 \u0938\u0941\u092c\u0939 \u092e\u0941\u091d\u0947 \u090f\u0915 \u091c\u0930\u0942\u0930\u0940 \u0915\u093e\u092e \u0915\u0947 \u0932\u093f\u090f \u0928\u093f\u0915\u0932\u0928\u093e \u0939\u0948 \u092a\u0930 \u092e\u0928 \u0928\u0939\u0940\u0902 \u0915\u0930 \u0930\u0939\u093e\u0964",
+          "hypothesis": "\u0915\u0932 \u0938\u0941\u092c\u0939 \u092e\u0941\u091d\u0947 \u090f\u0915 \u091c\u093c\u0930\u0942\u0930\u0940 \u0915\u093e\u092e \u0915\u0947 \u0932\u093f\u090f \u0928\u093f\u0915\u0932\u0928\u093e \u0939\u0948 \u092a\u0930 \u092e\u0928 \u0928\u0939\u0940\u0902 \u0915\u0930 \u0930\u0939\u093e\u0964",
+          "wer": 0.0667,
+          "cer": 0.0164
+        },
+        {
+          "category": "Hindi Short Utterance",
+          "reference": "\u0915\u094d\u092f\u093e \u0924\u0941\u092e \u092e\u0947\u0930\u0940 \u092c\u093e\u0924 \u0938\u0941\u0928 \u0930\u0939\u0947 \u0939\u094b?",
+          "hypothesis": "\u0915\u094d\u092f\u093e \u0924\u0941\u092e \u092e\u0947\u0930\u0940 \u092c\u093e\u0924 \u0938\u0941\u0928 \u0930\u0939\u0947 \u0939\u094b?",
+          "wer": 0.0,
+          "cer": 0.0
+        }
+      ]
+    },
+    "hinglish": {
+      "mean_wer": 0.0,
+      "mean_cer": 0.0,
+      "sample_count": 3,
+      "samples": [
+        {
+          "category": "Hinglish High Code-Switching",
+          "reference": "Yaar aaj mera mood bilkul theek nahi hai college mein bhi kuch accha nahi laga.",
+          "hypothesis": "Yaar aaj mera mood bilkul theek nahi hai college mein bhi kuch accha nahi laga.",
+          "wer": 0.0,
+          "cer": 0.0
+        },
+        {
+          "category": "Hinglish Emotional Sharing",
+          "reference": "Mujhe aaj bohot stress ho raha hai and I really don't know kya karun.",
+          "hypothesis": "Mujhe aaj bohot stress ho raha hai and I really don't know kya karun.",
+          "wer": 0.0,
+          "cer": 0.0
+        },
+        {
+          "category": "Hinglish Conversational Question",
+          "reference": "Can you please meri baat suno because everything is getting difficult.",
+          "hypothesis": "Can you please meri baat suno because everything is getting difficult.",
+          "wer": 0.0,
+          "cer": 0.0
+        }
+      ]
+    }
+  },
+  "language_matching_metrics": {
+    "static_cases": [
+      {
+        "test_case": "Native Hindi in Devanagari Script",
+        "user_text": "\u092e\u0941\u091d\u0947 \u0906\u091c \u092c\u0939\u0941\u0924 \u0905\u0915\u0947\u0932\u093e \u0932\u0917 \u0930\u0939\u093e \u0939\u0948, \u0915\u094b\u0908 \u092c\u093e\u0924 \u0915\u0930\u0928\u0947 \u0935\u093e\u0932\u093e \u0928\u0939\u0940\u0902 \u0939\u0948\u0964",
+        "expected_language": "hi",
+        "detected_language": "hi",
+        "detection_confidence": 0.95,
+        "script_type": "devanagari",
+        "is_code_switched": false,
+        "is_matched": true,
+        "has_mandatory_script_directive": true
+      },
+      {
+        "test_case": "Code-switched Hinglish in Latin Script",
+        "user_text": "Yaar aaj mera mood bilkul theek nahi hai. College mein presentation thi and I was nervous.",
+        "expected_language": "hinglish",
+        "detected_language": "hinglish",
+        "detection_confidence": 0.9,
+        "script_type": "unknown",
+        "is_code_switched": true,
+        "is_matched": true,
+        "has_mandatory_script_directive": true
+      },
+      {
+        "test_case": "High-code-density Hinglish with English clauses",
+        "user_text": "Mujhe aaj bohot stress ho raha hai, can you please meri baat suno?",
+        "expected_language": "hinglish",
+        "detected_language": "hinglish",
+        "detection_confidence": 0.9,
+        "script_type": "unknown",
+        "is_code_switched": true,
+        "is_matched": true,
+        "has_mandatory_script_directive": true
+      },
+      {
+        "test_case": "Natural English utterance",
+        "user_text": "I had a really tough day at work today, nothing seemed to go right.",
+        "expected_language": "en",
+        "detected_language": "en",
+        "detection_confidence": 0.85,
+        "script_type": "unknown",
+        "is_code_switched": false,
+        "is_matched": true,
+        "has_mandatory_script_directive": true
+      },
+      {
+        "test_case": "Conversational Spanish",
+        "user_text": "Hola, hoy me siento un poco triste y solo necesito que alguien me escuche.",
+        "expected_language": "es",
+        "detected_language": "es",
+        "detection_confidence": 0.88,
+        "script_type": "unknown",
+        "is_code_switched": false,
+        "is_matched": true,
+        "has_mandatory_script_directive": true
+      },
+      {
+        "test_case": "Conversational French",
+        "user_text": "Bonjour, j'ai pass\u00e9 une journ\u00e9e tr\u00e8s fatigante et j'ai besoin de parler.",
+        "expected_language": "fr",
+        "detected_language": "fr",
+        "detection_confidence": 0.88,
+        "script_type": "unknown",
+        "is_code_switched": false,
+        "is_matched": true,
+        "has_mandatory_script_directive": true
+      }
+    ],
+    "wrong_language_rate_pct": 0.0,
+    "dynamic_turn_switching": [
+      {
+        "turn": "Turn 1 (EN)",
+        "text": "Hello, I want to talk about my day.",
+        "detected": "en",
+        "expected": "en",
+        "matched": true
+      },
+      {
+        "turn": "Turn 2 (HI)",
+        "text": "\u0905\u092c \u092e\u0941\u091d\u0947 \u0939\u093f\u0902\u0926\u0940 \u092e\u0947\u0902 \u092c\u093e\u0924 \u0915\u0930\u0928\u0940 \u0939\u0948, \u0938\u092c \u0915\u0941\u091b \u0920\u0940\u0915 \u0928\u0939\u0940\u0902 \u0932\u0917 \u0930\u0939\u093e\u0964",
+        "detected": "hi",
+        "expected": "hi",
+        "matched": true
+      },
+      {
+        "turn": "Turn 3 (Hinglish)",
+        "text": "Yaar actually I don't know kya karun, bohot confusion hai.",
+        "detected": "hinglish",
+        "expected": "hinglish",
+        "matched": true
+      },
+      {
+        "turn": "Turn 4 (EN)",
+        "text": "Thanks for listening to me today.",
+        "detected": "en",
+        "expected": "en",
+        "matched": true
+      }
+    ]
+  }
+}

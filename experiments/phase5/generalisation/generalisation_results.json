@@ -1,0 +1,2962 @@
+{
+  "Logistic Regression": {
+    "feature_label": "43 Acoustic Features",
+    "random_split": {
+      "accuracy": 0.5618,
+      "macro_f1": 0.5496,
+      "weighted_f1": 0.5589,
+      "macro_precision": 0.5493,
+      "macro_recall": 0.5514,
+      "fold_accuracies": [
+        0.5694,
+        0.5382,
+        0.6007,
+        0.5486,
+        0.5521
+      ],
+      "fold_macro_f1s": [
+        0.5569,
+        0.5215,
+        0.6067,
+        0.5367,
+        0.5208
+      ],
+      "per_class": {
+        "angry": {
+          "precision": 0.6474,
+          "recall": 0.6406,
+          "f1": 0.644,
+          "support": 192
+        },
+        "calm": {
+          "precision": 0.6616,
+          "recall": 0.6823,
+          "f1": 0.6718,
+          "support": 192
+        },
+        "disgust": {
+          "precision": 0.5806,
+          "recall": 0.6562,
+          "f1": 0.6161,
+          "support": 192
+        },
+        "fearful": {
+          "precision": 0.4912,
+          "recall": 0.4375,
+          "f1": 0.4628,
+          "support": 192
+        },
+        "happy": {
+          "precision": 0.4894,
+          "recall": 0.4792,
+          "f1": 0.4842,
+          "support": 192
+        },
+        "neutral": {
+          "precision": 0.427,
+          "recall": 0.3958,
+          "f1": 0.4108,
+          "support": 96
+        },
+        "sad": {
+          "precision": 0.45,
+          "recall": 0.4219,
+          "f1": 0.4355,
+          "support": 192
+        },
+        "surprised": {
+          "precision": 0.6473,
+          "recall": 0.6979,
+          "f1": 0.6717,
+          "support": 192
+        }
+      },
+      "confusion_matrix": [
+        [
+          123,
+          1,
+          26,
+          10,
+          11,
+          4,
+          2,
+          15
+        ],
+        [
+          0,
+          131,
+          10,
+          8,
+          1,
+          14,
+          25,
+          3
+        ],
+        [
+          19,
+          5,
+          126,
+          5,
+          9,
+          8,
+          7,
+          13
+        ],
+        [
+          12,
+          10,
+          13,
+          84,
+          34,
+          2,
+          24,
+          13
+        ],
+        [
+          17,
+          7,
+          13,
+          27,
+          92,
+          4,
+          17,
+          15
+        ],
+        [
+          1,
+          11,
+          7,
+          7,
+          9,
+          38,
+          19,
+          4
+        ],
+        [
+          5,
+          31,
+          12,
+          19,
+          19,
+          15,
+          81,
+          10
+        ],
+        [
+          13,
+          2,
+          10,
+          11,
+          13,
+          4,
+          5,
+          134
+        ]
+      ]
+    },
+    "speaker_independent": {
+      "accuracy": 0.4785,
+      "macro_f1": 0.4645,
+      "weighted_f1": 0.4737,
+      "macro_precision": 0.464,
+      "macro_recall": 0.4674,
+      "fold_accuracies": [
+        0.4133,
+        0.53,
+        0.5433,
+        0.43,
+        0.475
+      ],
+      "fold_macro_f1s": [
+        0.394,
+        0.5078,
+        0.5387,
+        0.4018,
+        0.4712
+      ],
+      "per_class": {
+        "angry": {
+          "precision": 0.5707,
+          "recall": 0.6094,
+          "f1": 0.5894,
+          "support": 192
+        },
+        "calm": {
+          "precision": 0.5517,
+          "recall": 0.5833,
+          "f1": 0.5671,
+          "support": 192
+        },
+        "disgust": {
+          "precision": 0.5022,
+          "recall": 0.5833,
+          "f1": 0.5398,
+          "support": 192
+        },
+        "fearful": {
+          "precision": 0.3698,
+          "recall": 0.3698,
+          "f1": 0.3698,
+          "support": 192
+        },
+        "happy": {
+          "precision": 0.3702,
+          "recall": 0.349,
+          "f1": 0.3592,
+          "support": 192
+        },
+        "neutral": {
+          "precision": 0.3537,
+          "recall": 0.3021,
+          "f1": 0.3258,
+          "support": 96
+        },
+        "sad": {
+          "precision": 0.3694,
+          "recall": 0.3021,
+          "f1": 0.3324,
+          "support": 192
+        },
+        "surprised": {
+          "precision": 0.6244,
+          "recall": 0.6406,
+          "f1": 0.6324,
+          "support": 192
+        }
+      },
+      "confusion_matrix": [
+        [
+          117,
+          3,
+          25,
+          13,
+          8,
+          5,
+          4,
+          17
+        ],
+        [
+          1,
+          112,
+          13,
+          18,
+          6,
+          13,
+          25,
+          4
+        ],
+        [
+          27,
+          6,
+          112,
+          8,
+          12,
+          6,
+          10,
+          11
+        ],
+        [
+          11,
+          13,
+          17,
+          71,
+          46,
+          2,
+          22,
+          10
+        ],
+        [
+          26,
+          12,
+          15,
+          36,
+          67,
+          5,
+          14,
+          17
+        ],
+        [
+          0,
+          17,
+          7,
+          8,
+          10,
+          29,
+          20,
+          5
+        ],
+        [
+          8,
+          37,
+          21,
+          28,
+          13,
+          17,
+          58,
+          10
+        ],
+        [
+          15,
+          3,
+          13,
+          10,
+          19,
+          5,
+          4,
+          123
+        ]
+      ]
+    },
+    "generalisation_gap": {
+      "delta_accuracy": 0.0833,
+      "delta_macro_f1": 0.0851,
+      "relative_f1_drop_pct": 15.48
+    },
+    "cross_gender": {
+      "male_train_female_test": {
+        "accuracy": 0.3472,
+        "macro_f1": 0.2843,
+        "weighted_f1": 0.3006,
+        "per_class": {
+          "angry": {
+            "precision": 0.6038,
+            "recall": 0.3333,
+            "f1": 0.4295,
+            "support": 96
+          },
+          "calm": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 96
+          },
+          "disgust": {
+            "precision": 0.3684,
+            "recall": 0.5833,
+            "f1": 0.4516,
+            "support": 96
+          },
+          "fearful": {
+            "precision": 0.2342,
+            "recall": 0.6562,
+            "f1": 0.3452,
+            "support": 96
+          },
+          "happy": {
+            "precision": 0.2381,
+            "recall": 0.1042,
+            "f1": 0.1449,
+            "support": 96
+          },
+          "neutral": {
+            "precision": 0.3333,
+            "recall": 0.0208,
+            "f1": 0.0392,
+            "support": 48
+          },
+          "sad": {
+            "precision": 0.3165,
+            "recall": 0.2604,
+            "f1": 0.2857,
+            "support": 96
+          },
+          "surprised": {
+            "precision": 0.5164,
+            "recall": 0.6562,
+            "f1": 0.578,
+            "support": 96
+          }
+        },
+        "confusion_matrix": [
+          [
+            32,
+            0,
+            36,
+            7,
+            3,
+            1,
+            4,
+            13
+          ],
+          [
+            0,
+            0,
+            1,
+            60,
+            0,
+            0,
+            34,
+            1
+          ],
+          [
+            5,
+            0,
+            56,
+            22,
+            6,
+            0,
+            5,
+            2
+          ],
+          [
+            5,
+            0,
+            7,
+            63,
+            11,
+            0,
+            4,
+            6
+          ],
+          [
+            5,
+            0,
+            14,
+            39,
+            10,
+            0,
+            3,
+            25
+          ],
+          [
+            0,
+            0,
+            6,
+            30,
+            0,
+            1,
+            3,
+            8
+          ],
+          [
+            1,
+            0,
+            12,
+            43,
+            10,
+            1,
+            25,
+            4
+          ],
+          [
+            5,
+            0,
+            20,
+            5,
+            2,
+            0,
+            1,
+            63
+          ]
+        ]
+      },
+      "female_train_male_test": {
+        "accuracy": 0.3389,
+        "macro_f1": 0.3037,
+        "weighted_f1": 0.3117,
+        "per_class": {
+          "angry": {
+            "precision": 0.3526,
+            "recall": 0.5729,
+            "f1": 0.4365,
+            "support": 96
+          },
+          "calm": {
+            "precision": 0.3403,
+            "recall": 0.6771,
+            "f1": 0.453,
+            "support": 96
+          },
+          "disgust": {
+            "precision": 0.6364,
+            "recall": 0.3646,
+            "f1": 0.4636,
+            "support": 96
+          },
+          "fearful": {
+            "precision": 0.4,
+            "recall": 0.0417,
+            "f1": 0.0755,
+            "support": 96
+          },
+          "happy": {
+            "precision": 0.247,
+            "recall": 0.4271,
+            "f1": 0.313,
+            "support": 96
+          },
+          "neutral": {
+            "precision": 0.1639,
+            "recall": 0.2083,
+            "f1": 0.1835,
+            "support": 48
+          },
+          "sad": {
+            "precision": 0.3036,
+            "recall": 0.1771,
+            "f1": 0.2237,
+            "support": 96
+          },
+          "surprised": {
+            "precision": 0.68,
+            "recall": 0.1771,
+            "f1": 0.281,
+            "support": 96
+          }
+        },
+        "confusion_matrix": [
+          [
+            55,
+            3,
+            1,
+            1,
+            32,
+            3,
+            0,
+            1
+          ],
+          [
+            6,
+            65,
+            2,
+            0,
+            0,
+            14,
+            8,
+            1
+          ],
+          [
+            25,
+            17,
+            35,
+            0,
+            9,
+            8,
+            1,
+            1
+          ],
+          [
+            11,
+            26,
+            1,
+            4,
+            36,
+            5,
+            13,
+            0
+          ],
+          [
+            17,
+            19,
+            3,
+            1,
+            41,
+            3,
+            8,
+            4
+          ],
+          [
+            9,
+            18,
+            0,
+            0,
+            5,
+            10,
+            6,
+            0
+          ],
+          [
+            15,
+            35,
+            6,
+            1,
+            15,
+            6,
+            17,
+            1
+          ],
+          [
+            18,
+            8,
+            7,
+            3,
+            28,
+            12,
+            3,
+            17
+          ]
+        ]
+      },
+      "average_cross_gender_f1": 0.294
+    },
+    "eval_time_sec": 0.32
+  },
+  "Support Vector Machine": {
+    "feature_label": "43 Acoustic Features",
+    "random_split": {
+      "accuracy": 0.6868,
+      "macro_f1": 0.6719,
+      "weighted_f1": 0.6832,
+      "macro_precision": 0.6773,
+      "macro_recall": 0.6719,
+      "fold_accuracies": [
+        0.6736,
+        0.7361,
+        0.6771,
+        0.6562,
+        0.691
+      ],
+      "fold_macro_f1s": [
+        0.6679,
+        0.7173,
+        0.6585,
+        0.6383,
+        0.6727
+      ],
+      "per_class": {
+        "angry": {
+          "precision": 0.7824,
+          "recall": 0.7865,
+          "f1": 0.7844,
+          "support": 192
+        },
+        "calm": {
+          "precision": 0.6929,
+          "recall": 0.8698,
+          "f1": 0.7714,
+          "support": 192
+        },
+        "disgust": {
+          "precision": 0.7122,
+          "recall": 0.7604,
+          "f1": 0.7355,
+          "support": 192
+        },
+        "fearful": {
+          "precision": 0.6647,
+          "recall": 0.599,
+          "f1": 0.6301,
+          "support": 192
+        },
+        "happy": {
+          "precision": 0.6503,
+          "recall": 0.6198,
+          "f1": 0.6347,
+          "support": 192
+        },
+        "neutral": {
+          "precision": 0.5733,
+          "recall": 0.4479,
+          "f1": 0.5029,
+          "support": 96
+        },
+        "sad": {
+          "precision": 0.5829,
+          "recall": 0.5677,
+          "f1": 0.5752,
+          "support": 192
+        },
+        "surprised": {
+          "precision": 0.7596,
+          "recall": 0.724,
+          "f1": 0.7413,
+          "support": 192
+        }
+      },
+      "confusion_matrix": [
+        [
+          151,
+          2,
+          19,
+          3,
+          6,
+          2,
+          1,
+          8
+        ],
+        [
+          0,
+          167,
+          3,
+          1,
+          0,
+          11,
+          10,
+          0
+        ],
+        [
+          10,
+          4,
+          146,
+          5,
+          6,
+          2,
+          10,
+          9
+        ],
+        [
+          9,
+          9,
+          5,
+          115,
+          22,
+          0,
+          25,
+          7
+        ],
+        [
+          10,
+          5,
+          11,
+          17,
+          119,
+          4,
+          12,
+          14
+        ],
+        [
+          0,
+          28,
+          2,
+          2,
+          5,
+          43,
+          15,
+          1
+        ],
+        [
+          4,
+          25,
+          13,
+          18,
+          10,
+          8,
+          109,
+          5
+        ],
+        [
+          9,
+          1,
+          6,
+          12,
+          15,
+          5,
+          5,
+          139
+        ]
+      ]
+    },
+    "speaker_independent": {
+      "accuracy": 0.4903,
+      "macro_f1": 0.4794,
+      "weighted_f1": 0.4882,
+      "macro_precision": 0.4885,
+      "macro_recall": 0.4779,
+      "fold_accuracies": [
+        0.4767,
+        0.51,
+        0.5533,
+        0.46,
+        0.4417
+      ],
+      "fold_macro_f1s": [
+        0.4576,
+        0.4913,
+        0.5499,
+        0.4445,
+        0.4297
+      ],
+      "per_class": {
+        "angry": {
+          "precision": 0.6068,
+          "recall": 0.651,
+          "f1": 0.6281,
+          "support": 192
+        },
+        "calm": {
+          "precision": 0.5876,
+          "recall": 0.5938,
+          "f1": 0.5907,
+          "support": 192
+        },
+        "disgust": {
+          "precision": 0.5084,
+          "recall": 0.6302,
+          "f1": 0.5628,
+          "support": 192
+        },
+        "fearful": {
+          "precision": 0.3636,
+          "recall": 0.3958,
+          "f1": 0.3791,
+          "support": 192
+        },
+        "happy": {
+          "precision": 0.3881,
+          "recall": 0.4062,
+          "f1": 0.3969,
+          "support": 192
+        },
+        "neutral": {
+          "precision": 0.4308,
+          "recall": 0.2917,
+          "f1": 0.3478,
+          "support": 96
+        },
+        "sad": {
+          "precision": 0.3563,
+          "recall": 0.3229,
+          "f1": 0.3388,
+          "support": 192
+        },
+        "surprised": {
+          "precision": 0.6667,
+          "recall": 0.5312,
+          "f1": 0.5913,
+          "support": 192
+        }
+      },
+      "confusion_matrix": [
+        [
+          125,
+          2,
+          25,
+          11,
+          12,
+          1,
+          5,
+          11
+        ],
+        [
+          1,
+          114,
+          15,
+          20,
+          3,
+          13,
+          25,
+          1
+        ],
+        [
+          24,
+          4,
+          121,
+          6,
+          11,
+          2,
+          16,
+          8
+        ],
+        [
+          18,
+          11,
+          11,
+          76,
+          45,
+          2,
+          24,
+          5
+        ],
+        [
+          17,
+          8,
+          15,
+          41,
+          78,
+          2,
+          12,
+          19
+        ],
+        [
+          0,
+          24,
+          8,
+          9,
+          8,
+          28,
+          18,
+          1
+        ],
+        [
+          7,
+          30,
+          27,
+          25,
+          21,
+          14,
+          62,
+          6
+        ],
+        [
+          14,
+          1,
+          16,
+          21,
+          23,
+          3,
+          12,
+          102
+        ]
+      ]
+    },
+    "generalisation_gap": {
+      "delta_accuracy": 0.1965,
+      "delta_macro_f1": 0.1925,
+      "relative_f1_drop_pct": 28.65
+    },
+    "cross_gender": {
+      "male_train_female_test": {
+        "accuracy": 0.3,
+        "macro_f1": 0.2419,
+        "weighted_f1": 0.2553,
+        "per_class": {
+          "angry": {
+            "precision": 0.551,
+            "recall": 0.2812,
+            "f1": 0.3724,
+            "support": 96
+          },
+          "calm": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 96
+          },
+          "disgust": {
+            "precision": 0.4393,
+            "recall": 0.4896,
+            "f1": 0.4631,
+            "support": 96
+          },
+          "fearful": {
+            "precision": 0.1993,
+            "recall": 0.5938,
+            "f1": 0.2984,
+            "support": 96
+          },
+          "happy": {
+            "precision": 0.2273,
+            "recall": 0.0521,
+            "f1": 0.0847,
+            "support": 96
+          },
+          "neutral": {
+            "precision": 1.0,
+            "recall": 0.0208,
+            "f1": 0.0408,
+            "support": 48
+          },
+          "sad": {
+            "precision": 0.2121,
+            "recall": 0.2188,
+            "f1": 0.2154,
+            "support": 96
+          },
+          "surprised": {
+            "precision": 0.3718,
+            "recall": 0.6042,
+            "f1": 0.4603,
+            "support": 96
+          }
+        },
+        "confusion_matrix": [
+          [
+            27,
+            0,
+            12,
+            25,
+            1,
+            0,
+            5,
+            26
+          ],
+          [
+            0,
+            0,
+            12,
+            69,
+            2,
+            0,
+            13,
+            0
+          ],
+          [
+            4,
+            0,
+            47,
+            11,
+            4,
+            0,
+            9,
+            21
+          ],
+          [
+            5,
+            0,
+            4,
+            57,
+            0,
+            0,
+            22,
+            8
+          ],
+          [
+            4,
+            0,
+            2,
+            50,
+            5,
+            0,
+            14,
+            21
+          ],
+          [
+            0,
+            0,
+            6,
+            21,
+            1,
+            1,
+            4,
+            15
+          ],
+          [
+            4,
+            0,
+            16,
+            44,
+            4,
+            0,
+            21,
+            7
+          ],
+          [
+            5,
+            0,
+            8,
+            9,
+            5,
+            0,
+            11,
+            58
+          ]
+        ]
+      },
+      "female_train_male_test": {
+        "accuracy": 0.3625,
+        "macro_f1": 0.3184,
+        "weighted_f1": 0.3354,
+        "per_class": {
+          "angry": {
+            "precision": 0.4511,
+            "recall": 0.625,
+            "f1": 0.524,
+            "support": 96
+          },
+          "calm": {
+            "precision": 0.35,
+            "recall": 0.5104,
+            "f1": 0.4153,
+            "support": 96
+          },
+          "disgust": {
+            "precision": 0.4214,
+            "recall": 0.6146,
+            "f1": 0.5,
+            "support": 96
+          },
+          "fearful": {
+            "precision": 0.44,
+            "recall": 0.2292,
+            "f1": 0.3014,
+            "support": 96
+          },
+          "happy": {
+            "precision": 0.2762,
+            "recall": 0.3021,
+            "f1": 0.2886,
+            "support": 96
+          },
+          "neutral": {
+            "precision": 0.1429,
+            "recall": 0.0417,
+            "f1": 0.0645,
+            "support": 48
+          },
+          "sad": {
+            "precision": 0.2459,
+            "recall": 0.3125,
+            "f1": 0.2752,
+            "support": 96
+          },
+          "surprised": {
+            "precision": 0.625,
+            "recall": 0.1042,
+            "f1": 0.1786,
+            "support": 96
+          }
+        },
+        "confusion_matrix": [
+          [
+            60,
+            5,
+            5,
+            4,
+            17,
+            1,
+            2,
+            2
+          ],
+          [
+            1,
+            49,
+            14,
+            3,
+            0,
+            0,
+            29,
+            0
+          ],
+          [
+            13,
+            8,
+            59,
+            4,
+            4,
+            1,
+            6,
+            1
+          ],
+          [
+            6,
+            24,
+            11,
+            22,
+            19,
+            2,
+            12,
+            0
+          ],
+          [
+            24,
+            10,
+            12,
+            1,
+            29,
+            1,
+            16,
+            3
+          ],
+          [
+            4,
+            11,
+            10,
+            1,
+            4,
+            2,
+            16,
+            0
+          ],
+          [
+            5,
+            26,
+            20,
+            7,
+            7,
+            1,
+            30,
+            0
+          ],
+          [
+            20,
+            7,
+            9,
+            8,
+            25,
+            6,
+            11,
+            10
+          ]
+        ]
+      },
+      "average_cross_gender_f1": 0.2802
+    },
+    "eval_time_sec": 3.19
+  },
+  "Random Forest": {
+    "feature_label": "43 Acoustic Features",
+    "random_split": {
+      "accuracy": 0.6069,
+      "macro_f1": 0.5851,
+      "weighted_f1": 0.5976,
+      "macro_precision": 0.6036,
+      "macro_recall": 0.5885,
+      "fold_accuracies": [
+        0.6042,
+        0.6424,
+        0.6007,
+        0.6111,
+        0.5764
+      ],
+      "fold_macro_f1s": [
+        0.5856,
+        0.6188,
+        0.5776,
+        0.5923,
+        0.5513
+      ],
+      "per_class": {
+        "angry": {
+          "precision": 0.7167,
+          "recall": 0.6719,
+          "f1": 0.6935,
+          "support": 192
+        },
+        "calm": {
+          "precision": 0.5545,
+          "recall": 0.875,
+          "f1": 0.6788,
+          "support": 192
+        },
+        "disgust": {
+          "precision": 0.6445,
+          "recall": 0.7083,
+          "f1": 0.6749,
+          "support": 192
+        },
+        "fearful": {
+          "precision": 0.6424,
+          "recall": 0.5521,
+          "f1": 0.5938,
+          "support": 192
+        },
+        "happy": {
+          "precision": 0.5628,
+          "recall": 0.5365,
+          "f1": 0.5493,
+          "support": 192
+        },
+        "neutral": {
+          "precision": 0.5455,
+          "recall": 0.3125,
+          "f1": 0.3974,
+          "support": 96
+        },
+        "sad": {
+          "precision": 0.5441,
+          "recall": 0.3854,
+          "f1": 0.4512,
+          "support": 192
+        },
+        "surprised": {
+          "precision": 0.6184,
+          "recall": 0.6667,
+          "f1": 0.6416,
+          "support": 192
+        }
+      },
+      "confusion_matrix": [
+        [
+          129,
+          3,
+          22,
+          6,
+          11,
+          2,
+          2,
+          17
+        ],
+        [
+          0,
+          168,
+          4,
+          1,
+          0,
+          9,
+          10,
+          0
+        ],
+        [
+          9,
+          13,
+          136,
+          2,
+          8,
+          1,
+          11,
+          12
+        ],
+        [
+          9,
+          18,
+          7,
+          106,
+          23,
+          0,
+          14,
+          15
+        ],
+        [
+          16,
+          12,
+          11,
+          18,
+          103,
+          4,
+          9,
+          19
+        ],
+        [
+          0,
+          40,
+          4,
+          0,
+          8,
+          30,
+          8,
+          6
+        ],
+        [
+          6,
+          45,
+          15,
+          25,
+          10,
+          7,
+          74,
+          10
+        ],
+        [
+          11,
+          4,
+          12,
+          7,
+          20,
+          2,
+          8,
+          128
+        ]
+      ]
+    },
+    "speaker_independent": {
+      "accuracy": 0.4597,
+      "macro_f1": 0.4288,
+      "weighted_f1": 0.4462,
+      "macro_precision": 0.4322,
+      "macro_recall": 0.4388,
+      "fold_accuracies": [
+        0.4033,
+        0.4367,
+        0.53,
+        0.45,
+        0.4833
+      ],
+      "fold_macro_f1s": [
+        0.3459,
+        0.4082,
+        0.4929,
+        0.4216,
+        0.4728
+      ],
+      "per_class": {
+        "angry": {
+          "precision": 0.5707,
+          "recall": 0.5885,
+          "f1": 0.5795,
+          "support": 192
+        },
+        "calm": {
+          "precision": 0.491,
+          "recall": 0.7083,
+          "f1": 0.58,
+          "support": 192
+        },
+        "disgust": {
+          "precision": 0.4585,
+          "recall": 0.5469,
+          "f1": 0.4988,
+          "support": 192
+        },
+        "fearful": {
+          "precision": 0.4224,
+          "recall": 0.3542,
+          "f1": 0.3853,
+          "support": 192
+        },
+        "happy": {
+          "precision": 0.4231,
+          "recall": 0.401,
+          "f1": 0.4118,
+          "support": 192
+        },
+        "neutral": {
+          "precision": 0.25,
+          "recall": 0.125,
+          "f1": 0.1667,
+          "support": 96
+        },
+        "sad": {
+          "precision": 0.3194,
+          "recall": 0.2396,
+          "f1": 0.2738,
+          "support": 192
+        },
+        "surprised": {
+          "precision": 0.5224,
+          "recall": 0.5469,
+          "f1": 0.5344,
+          "support": 192
+        }
+      },
+      "confusion_matrix": [
+        [
+          113,
+          6,
+          21,
+          15,
+          10,
+          0,
+          7,
+          20
+        ],
+        [
+          0,
+          136,
+          14,
+          2,
+          3,
+          16,
+          16,
+          5
+        ],
+        [
+          22,
+          19,
+          105,
+          6,
+          10,
+          3,
+          12,
+          15
+        ],
+        [
+          17,
+          17,
+          20,
+          68,
+          32,
+          0,
+          23,
+          15
+        ],
+        [
+          20,
+          10,
+          20,
+          32,
+          77,
+          5,
+          9,
+          19
+        ],
+        [
+          0,
+          31,
+          8,
+          1,
+          15,
+          12,
+          21,
+          8
+        ],
+        [
+          10,
+          52,
+          21,
+          22,
+          16,
+          11,
+          46,
+          14
+        ],
+        [
+          16,
+          6,
+          20,
+          15,
+          19,
+          1,
+          10,
+          105
+        ]
+      ]
+    },
+    "generalisation_gap": {
+      "delta_accuracy": 0.1472,
+      "delta_macro_f1": 0.1563,
+      "relative_f1_drop_pct": 26.71
+    },
+    "cross_gender": {
+      "male_train_female_test": {
+        "accuracy": 0.2722,
+        "macro_f1": 0.2024,
+        "weighted_f1": 0.2159,
+        "per_class": {
+          "angry": {
+            "precision": 0.3354,
+            "recall": 0.5625,
+            "f1": 0.4202,
+            "support": 96
+          },
+          "calm": {
+            "precision": 0.3333,
+            "recall": 0.0104,
+            "f1": 0.0202,
+            "support": 96
+          },
+          "disgust": {
+            "precision": 0.3304,
+            "recall": 0.3958,
+            "f1": 0.3602,
+            "support": 96
+          },
+          "fearful": {
+            "precision": 0.2552,
+            "recall": 0.3854,
+            "f1": 0.3071,
+            "support": 96
+          },
+          "happy": {
+            "precision": 0.1695,
+            "recall": 0.1042,
+            "f1": 0.129,
+            "support": 96
+          },
+          "neutral": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 48
+          },
+          "sad": {
+            "precision": 0.75,
+            "recall": 0.0312,
+            "f1": 0.06,
+            "support": 96
+          },
+          "surprised": {
+            "precision": 0.2275,
+            "recall": 0.5521,
+            "f1": 0.3222,
+            "support": 96
+          }
+        },
+        "confusion_matrix": [
+          [
+            54,
+            0,
+            8,
+            10,
+            5,
+            0,
+            0,
+            19
+          ],
+          [
+            0,
+            1,
+            21,
+            31,
+            11,
+            0,
+            0,
+            32
+          ],
+          [
+            27,
+            0,
+            38,
+            1,
+            5,
+            0,
+            0,
+            25
+          ],
+          [
+            24,
+            0,
+            11,
+            37,
+            7,
+            0,
+            0,
+            17
+          ],
+          [
+            24,
+            0,
+            3,
+            30,
+            10,
+            0,
+            0,
+            29
+          ],
+          [
+            0,
+            2,
+            4,
+            6,
+            5,
+            0,
+            1,
+            30
+          ],
+          [
+            12,
+            0,
+            19,
+            18,
+            16,
+            0,
+            3,
+            28
+          ],
+          [
+            20,
+            0,
+            11,
+            12,
+            0,
+            0,
+            0,
+            53
+          ]
+        ]
+      },
+      "female_train_male_test": {
+        "accuracy": 0.3069,
+        "macro_f1": 0.2731,
+        "weighted_f1": 0.279,
+        "per_class": {
+          "angry": {
+            "precision": 0.5,
+            "recall": 0.3438,
+            "f1": 0.4074,
+            "support": 96
+          },
+          "calm": {
+            "precision": 0.3019,
+            "recall": 0.6667,
+            "f1": 0.4156,
+            "support": 96
+          },
+          "disgust": {
+            "precision": 0.2545,
+            "recall": 0.5833,
+            "f1": 0.3544,
+            "support": 96
+          },
+          "fearful": {
+            "precision": 0.375,
+            "recall": 0.0625,
+            "f1": 0.1071,
+            "support": 96
+          },
+          "happy": {
+            "precision": 0.3621,
+            "recall": 0.2188,
+            "f1": 0.2727,
+            "support": 96
+          },
+          "neutral": {
+            "precision": 0.25,
+            "recall": 0.1458,
+            "f1": 0.1842,
+            "support": 48
+          },
+          "sad": {
+            "precision": 0.2088,
+            "recall": 0.1979,
+            "f1": 0.2032,
+            "support": 96
+          },
+          "surprised": {
+            "precision": 0.5172,
+            "recall": 0.1562,
+            "f1": 0.24,
+            "support": 96
+          }
+        },
+        "confusion_matrix": [
+          [
+            33,
+            8,
+            31,
+            8,
+            9,
+            0,
+            1,
+            6
+          ],
+          [
+            0,
+            64,
+            7,
+            0,
+            0,
+            8,
+            17,
+            0
+          ],
+          [
+            5,
+            23,
+            56,
+            0,
+            1,
+            0,
+            10,
+            1
+          ],
+          [
+            7,
+            27,
+            22,
+            6,
+            12,
+            2,
+            19,
+            1
+          ],
+          [
+            10,
+            16,
+            35,
+            0,
+            21,
+            0,
+            8,
+            6
+          ],
+          [
+            2,
+            19,
+            4,
+            0,
+            4,
+            7,
+            12,
+            0
+          ],
+          [
+            1,
+            40,
+            27,
+            0,
+            2,
+            7,
+            19,
+            0
+          ],
+          [
+            8,
+            15,
+            38,
+            2,
+            9,
+            4,
+            5,
+            15
+          ]
+        ]
+      },
+      "average_cross_gender_f1": 0.2378
+    },
+    "eval_time_sec": 2.73
+  },
+  "Wav2Vec 2.0": {
+    "feature_label": "768 Deep Embeddings (Wav2Vec2 Base)",
+    "random_split": {
+      "accuracy": 0.7181,
+      "macro_f1": 0.7093,
+      "weighted_f1": 0.7168,
+      "macro_precision": 0.7088,
+      "macro_recall": 0.7109,
+      "fold_accuracies": [
+        0.7083,
+        0.7153,
+        0.7535,
+        0.7292,
+        0.684
+      ],
+      "fold_macro_f1s": [
+        0.7014,
+        0.7162,
+        0.7363,
+        0.7177,
+        0.6767
+      ],
+      "per_class": {
+        "angry": {
+          "precision": 0.803,
+          "recall": 0.8281,
+          "f1": 0.8154,
+          "support": 192
+        },
+        "calm": {
+          "precision": 0.761,
+          "recall": 0.8125,
+          "f1": 0.7859,
+          "support": 192
+        },
+        "disgust": {
+          "precision": 0.7842,
+          "recall": 0.776,
+          "f1": 0.7801,
+          "support": 192
+        },
+        "fearful": {
+          "precision": 0.7044,
+          "recall": 0.7448,
+          "f1": 0.7241,
+          "support": 192
+        },
+        "happy": {
+          "precision": 0.6384,
+          "recall": 0.5885,
+          "f1": 0.6125,
+          "support": 192
+        },
+        "neutral": {
+          "precision": 0.5918,
+          "recall": 0.6042,
+          "f1": 0.5979,
+          "support": 96
+        },
+        "sad": {
+          "precision": 0.6914,
+          "recall": 0.6302,
+          "f1": 0.6594,
+          "support": 192
+        },
+        "surprised": {
+          "precision": 0.6959,
+          "recall": 0.7031,
+          "f1": 0.6995,
+          "support": 192
+        }
+      },
+      "confusion_matrix": [
+        [
+          159,
+          0,
+          13,
+          3,
+          8,
+          0,
+          3,
+          6
+        ],
+        [
+          0,
+          156,
+          0,
+          3,
+          7,
+          16,
+          10,
+          0
+        ],
+        [
+          13,
+          2,
+          149,
+          4,
+          1,
+          4,
+          7,
+          12
+        ],
+        [
+          5,
+          2,
+          2,
+          143,
+          14,
+          1,
+          11,
+          14
+        ],
+        [
+          11,
+          5,
+          8,
+          21,
+          113,
+          8,
+          9,
+          17
+        ],
+        [
+          1,
+          16,
+          0,
+          1,
+          8,
+          58,
+          8,
+          4
+        ],
+        [
+          1,
+          23,
+          11,
+          13,
+          11,
+          6,
+          121,
+          6
+        ],
+        [
+          8,
+          1,
+          7,
+          15,
+          15,
+          5,
+          6,
+          135
+        ]
+      ]
+    },
+    "speaker_independent": {
+      "accuracy": 0.6,
+      "macro_f1": 0.5914,
+      "weighted_f1": 0.6014,
+      "macro_precision": 0.5929,
+      "macro_recall": 0.5911,
+      "fold_accuracies": [
+        0.5833,
+        0.56,
+        0.5733,
+        0.6633,
+        0.625
+      ],
+      "fold_macro_f1s": [
+        0.5835,
+        0.5498,
+        0.5666,
+        0.6433,
+        0.6223
+      ],
+      "per_class": {
+        "angry": {
+          "precision": 0.7421,
+          "recall": 0.7344,
+          "f1": 0.7382,
+          "support": 192
+        },
+        "calm": {
+          "precision": 0.672,
+          "recall": 0.651,
+          "f1": 0.6614,
+          "support": 192
+        },
+        "disgust": {
+          "precision": 0.6957,
+          "recall": 0.6667,
+          "f1": 0.6809,
+          "support": 192
+        },
+        "fearful": {
+          "precision": 0.6089,
+          "recall": 0.6406,
+          "f1": 0.6244,
+          "support": 192
+        },
+        "happy": {
+          "precision": 0.5196,
+          "recall": 0.4844,
+          "f1": 0.5013,
+          "support": 192
+        },
+        "neutral": {
+          "precision": 0.4272,
+          "recall": 0.4583,
+          "f1": 0.4422,
+          "support": 96
+        },
+        "sad": {
+          "precision": 0.4541,
+          "recall": 0.5156,
+          "f1": 0.4829,
+          "support": 192
+        },
+        "surprised": {
+          "precision": 0.6236,
+          "recall": 0.5781,
+          "f1": 0.6,
+          "support": 192
+        }
+      },
+      "confusion_matrix": [
+        [
+          141,
+          0,
+          20,
+          4,
+          11,
+          1,
+          5,
+          10
+        ],
+        [
+          2,
+          125,
+          5,
+          1,
+          12,
+          19,
+          27,
+          1
+        ],
+        [
+          15,
+          5,
+          128,
+          6,
+          6,
+          6,
+          20,
+          6
+        ],
+        [
+          8,
+          2,
+          0,
+          123,
+          20,
+          0,
+          20,
+          19
+        ],
+        [
+          10,
+          10,
+          6,
+          25,
+          93,
+          10,
+          18,
+          20
+        ],
+        [
+          3,
+          11,
+          4,
+          2,
+          9,
+          44,
+          20,
+          3
+        ],
+        [
+          0,
+          32,
+          13,
+          16,
+          9,
+          15,
+          99,
+          8
+        ],
+        [
+          11,
+          1,
+          8,
+          25,
+          19,
+          8,
+          9,
+          111
+        ]
+      ]
+    },
+    "generalisation_gap": {
+      "delta_accuracy": 0.1181,
+      "delta_macro_f1": 0.1179,
+      "relative_f1_drop_pct": 16.62
+    },
+    "cross_gender": {
+      "male_train_female_test": {
+        "accuracy": 0.4403,
+        "macro_f1": 0.4034,
+        "weighted_f1": 0.4303,
+        "per_class": {
+          "angry": {
+            "precision": 0.7619,
+            "recall": 0.5,
+            "f1": 0.6038,
+            "support": 96
+          },
+          "calm": {
+            "precision": 0.6707,
+            "recall": 0.5729,
+            "f1": 0.618,
+            "support": 96
+          },
+          "disgust": {
+            "precision": 0.3426,
+            "recall": 0.3854,
+            "f1": 0.3627,
+            "support": 96
+          },
+          "fearful": {
+            "precision": 0.4037,
+            "recall": 0.6771,
+            "f1": 0.5058,
+            "support": 96
+          },
+          "happy": {
+            "precision": 0.2788,
+            "recall": 0.4792,
+            "f1": 0.3525,
+            "support": 96
+          },
+          "neutral": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 48
+          },
+          "sad": {
+            "precision": 0.4271,
+            "recall": 0.4271,
+            "f1": 0.4271,
+            "support": 96
+          },
+          "surprised": {
+            "precision": 0.5682,
+            "recall": 0.2604,
+            "f1": 0.3571,
+            "support": 96
+          }
+        },
+        "confusion_matrix": [
+          [
+            48,
+            0,
+            22,
+            10,
+            12,
+            0,
+            1,
+            3
+          ],
+          [
+            0,
+            55,
+            5,
+            1,
+            13,
+            0,
+            22,
+            0
+          ],
+          [
+            2,
+            5,
+            37,
+            9,
+            33,
+            0,
+            6,
+            4
+          ],
+          [
+            1,
+            0,
+            6,
+            65,
+            21,
+            0,
+            0,
+            3
+          ],
+          [
+            6,
+            2,
+            7,
+            25,
+            46,
+            1,
+            6,
+            3
+          ],
+          [
+            0,
+            7,
+            14,
+            0,
+            7,
+            0,
+            19,
+            1
+          ],
+          [
+            2,
+            12,
+            8,
+            16,
+            12,
+            0,
+            41,
+            5
+          ],
+          [
+            4,
+            1,
+            9,
+            35,
+            21,
+            0,
+            1,
+            25
+          ]
+        ]
+      },
+      "female_train_male_test": {
+        "accuracy": 0.4333,
+        "macro_f1": 0.4182,
+        "weighted_f1": 0.421,
+        "per_class": {
+          "angry": {
+            "precision": 0.5854,
+            "recall": 0.75,
+            "f1": 0.6575,
+            "support": 96
+          },
+          "calm": {
+            "precision": 0.7273,
+            "recall": 0.3333,
+            "f1": 0.4571,
+            "support": 96
+          },
+          "disgust": {
+            "precision": 0.3861,
+            "recall": 0.6354,
+            "f1": 0.4803,
+            "support": 96
+          },
+          "fearful": {
+            "precision": 0.4595,
+            "recall": 0.3542,
+            "f1": 0.4,
+            "support": 96
+          },
+          "happy": {
+            "precision": 0.5484,
+            "recall": 0.1771,
+            "f1": 0.2677,
+            "support": 96
+          },
+          "neutral": {
+            "precision": 0.2941,
+            "recall": 0.5208,
+            "f1": 0.3759,
+            "support": 48
+          },
+          "sad": {
+            "precision": 0.2892,
+            "recall": 0.5,
+            "f1": 0.3664,
+            "support": 96
+          },
+          "surprised": {
+            "precision": 0.5897,
+            "recall": 0.2396,
+            "f1": 0.3407,
+            "support": 96
+          }
+        },
+        "confusion_matrix": [
+          [
+            72,
+            1,
+            16,
+            0,
+            2,
+            0,
+            4,
+            1
+          ],
+          [
+            0,
+            32,
+            7,
+            2,
+            7,
+            17,
+            31,
+            0
+          ],
+          [
+            13,
+            0,
+            61,
+            2,
+            0,
+            7,
+            11,
+            2
+          ],
+          [
+            9,
+            1,
+            21,
+            34,
+            1,
+            4,
+            19,
+            7
+          ],
+          [
+            11,
+            1,
+            24,
+            16,
+            17,
+            6,
+            16,
+            5
+          ],
+          [
+            0,
+            4,
+            0,
+            0,
+            0,
+            25,
+            19,
+            0
+          ],
+          [
+            1,
+            5,
+            17,
+            3,
+            2,
+            19,
+            48,
+            1
+          ],
+          [
+            17,
+            0,
+            12,
+            17,
+            2,
+            7,
+            18,
+            23
+          ]
+        ]
+      },
+      "average_cross_gender_f1": 0.4108
+    },
+    "eval_time_sec": 1.55
+  },
+  "HuBERT": {
+    "feature_label": "768 Deep Embeddings (HuBERT Base)",
+    "random_split": {
+      "accuracy": 0.8243,
+      "macro_f1": 0.8211,
+      "weighted_f1": 0.8237,
+      "macro_precision": 0.8192,
+      "macro_recall": 0.8242,
+      "fold_accuracies": [
+        0.8403,
+        0.8333,
+        0.8299,
+        0.8229,
+        0.7951
+      ],
+      "fold_macro_f1s": [
+        0.8406,
+        0.833,
+        0.8255,
+        0.8178,
+        0.7897
+      ],
+      "per_class": {
+        "angry": {
+          "precision": 0.8703,
+          "recall": 0.8385,
+          "f1": 0.8541,
+          "support": 192
+        },
+        "calm": {
+          "precision": 0.839,
+          "recall": 0.8958,
+          "f1": 0.8665,
+          "support": 192
+        },
+        "disgust": {
+          "precision": 0.8718,
+          "recall": 0.8854,
+          "f1": 0.8786,
+          "support": 192
+        },
+        "fearful": {
+          "precision": 0.8396,
+          "recall": 0.8177,
+          "f1": 0.8285,
+          "support": 192
+        },
+        "happy": {
+          "precision": 0.8065,
+          "recall": 0.7812,
+          "f1": 0.7937,
+          "support": 192
+        },
+        "neutral": {
+          "precision": 0.7453,
+          "recall": 0.8229,
+          "f1": 0.7822,
+          "support": 96
+        },
+        "sad": {
+          "precision": 0.7486,
+          "recall": 0.6979,
+          "f1": 0.7224,
+          "support": 192
+        },
+        "surprised": {
+          "precision": 0.8325,
+          "recall": 0.8542,
+          "f1": 0.8432,
+          "support": 192
+        }
+      },
+      "confusion_matrix": [
+        [
+          161,
+          1,
+          7,
+          3,
+          10,
+          2,
+          3,
+          5
+        ],
+        [
+          0,
+          172,
+          0,
+          0,
+          3,
+          9,
+          8,
+          0
+        ],
+        [
+          6,
+          2,
+          170,
+          2,
+          0,
+          1,
+          7,
+          4
+        ],
+        [
+          2,
+          2,
+          3,
+          157,
+          4,
+          0,
+          16,
+          8
+        ],
+        [
+          8,
+          2,
+          5,
+          9,
+          150,
+          2,
+          4,
+          12
+        ],
+        [
+          2,
+          9,
+          0,
+          1,
+          0,
+          79,
+          4,
+          1
+        ],
+        [
+          2,
+          17,
+          6,
+          10,
+          11,
+          9,
+          134,
+          3
+        ],
+        [
+          4,
+          0,
+          4,
+          5,
+          8,
+          4,
+          3,
+          164
+        ]
+      ]
+    },
+    "speaker_independent": {
+      "accuracy": 0.6701,
+      "macro_f1": 0.6666,
+      "weighted_f1": 0.6732,
+      "macro_precision": 0.672,
+      "macro_recall": 0.6647,
+      "fold_accuracies": [
+        0.5933,
+        0.7033,
+        0.68,
+        0.7433,
+        0.6208
+      ],
+      "fold_macro_f1s": [
+        0.5857,
+        0.6954,
+        0.6776,
+        0.7298,
+        0.6269
+      ],
+      "per_class": {
+        "angry": {
+          "precision": 0.7617,
+          "recall": 0.7656,
+          "f1": 0.7636,
+          "support": 192
+        },
+        "calm": {
+          "precision": 0.6667,
+          "recall": 0.7188,
+          "f1": 0.6917,
+          "support": 192
+        },
+        "disgust": {
+          "precision": 0.8,
+          "recall": 0.6667,
+          "f1": 0.7273,
+          "support": 192
+        },
+        "fearful": {
+          "precision": 0.7771,
+          "recall": 0.7083,
+          "f1": 0.7411,
+          "support": 192
+        },
+        "happy": {
+          "precision": 0.6214,
+          "recall": 0.6667,
+          "f1": 0.6432,
+          "support": 192
+        },
+        "neutral": {
+          "precision": 0.5545,
+          "recall": 0.5833,
+          "f1": 0.5685,
+          "support": 96
+        },
+        "sad": {
+          "precision": 0.473,
+          "recall": 0.5469,
+          "f1": 0.5072,
+          "support": 192
+        },
+        "surprised": {
+          "precision": 0.7216,
+          "recall": 0.6615,
+          "f1": 0.6902,
+          "support": 192
+        }
+      },
+      "confusion_matrix": [
+        [
+          147,
+          0,
+          5,
+          4,
+          14,
+          4,
+          8,
+          10
+        ],
+        [
+          0,
+          138,
+          2,
+          1,
+          3,
+          20,
+          27,
+          1
+        ],
+        [
+          13,
+          8,
+          128,
+          1,
+          11,
+          3,
+          25,
+          3
+        ],
+        [
+          10,
+          4,
+          3,
+          136,
+          12,
+          1,
+          16,
+          10
+        ],
+        [
+          9,
+          6,
+          5,
+          8,
+          128,
+          3,
+          15,
+          18
+        ],
+        [
+          2,
+          22,
+          1,
+          1,
+          1,
+          56,
+          11,
+          2
+        ],
+        [
+          3,
+          29,
+          9,
+          10,
+          17,
+          14,
+          105,
+          5
+        ],
+        [
+          9,
+          0,
+          7,
+          14,
+          20,
+          0,
+          15,
+          127
+        ]
+      ]
+    },
+    "generalisation_gap": {
+      "delta_accuracy": 0.1542,
+      "delta_macro_f1": 0.1545,
+      "relative_f1_drop_pct": 18.82
+    },
+    "cross_gender": {
+      "male_train_female_test": {
+        "accuracy": 0.6042,
+        "macro_f1": 0.5909,
+        "weighted_f1": 0.5946,
+        "per_class": {
+          "angry": {
+            "precision": 0.766,
+            "recall": 0.75,
+            "f1": 0.7579,
+            "support": 96
+          },
+          "calm": {
+            "precision": 0.6762,
+            "recall": 0.7396,
+            "f1": 0.7065,
+            "support": 96
+          },
+          "disgust": {
+            "precision": 0.7097,
+            "recall": 0.6875,
+            "f1": 0.6984,
+            "support": 96
+          },
+          "fearful": {
+            "precision": 0.5606,
+            "recall": 0.7708,
+            "f1": 0.6491,
+            "support": 96
+          },
+          "happy": {
+            "precision": 0.4178,
+            "recall": 0.6354,
+            "f1": 0.5041,
+            "support": 96
+          },
+          "neutral": {
+            "precision": 0.6471,
+            "recall": 0.4583,
+            "f1": 0.5366,
+            "support": 48
+          },
+          "sad": {
+            "precision": 0.4889,
+            "recall": 0.2292,
+            "f1": 0.3121,
+            "support": 96
+          },
+          "surprised": {
+            "precision": 0.662,
+            "recall": 0.4896,
+            "f1": 0.5629,
+            "support": 96
+          }
+        },
+        "confusion_matrix": [
+          [
+            72,
+            0,
+            9,
+            2,
+            8,
+            1,
+            1,
+            3
+          ],
+          [
+            0,
+            71,
+            3,
+            3,
+            7,
+            3,
+            8,
+            1
+          ],
+          [
+            2,
+            4,
+            66,
+            4,
+            14,
+            1,
+            4,
+            1
+          ],
+          [
+            2,
+            1,
+            2,
+            74,
+            11,
+            0,
+            2,
+            4
+          ],
+          [
+            7,
+            2,
+            1,
+            18,
+            61,
+            3,
+            0,
+            4
+          ],
+          [
+            0,
+            8,
+            0,
+            0,
+            3,
+            22,
+            8,
+            7
+          ],
+          [
+            2,
+            19,
+            7,
+            16,
+            22,
+            4,
+            22,
+            4
+          ],
+          [
+            9,
+            0,
+            5,
+            15,
+            20,
+            0,
+            0,
+            47
+          ]
+        ]
+      },
+      "female_train_male_test": {
+        "accuracy": 0.5111,
+        "macro_f1": 0.4833,
+        "weighted_f1": 0.4855,
+        "per_class": {
+          "angry": {
+            "precision": 0.5664,
+            "recall": 0.8438,
+            "f1": 0.6778,
+            "support": 96
+          },
+          "calm": {
+            "precision": 0.8529,
+            "recall": 0.3021,
+            "f1": 0.4462,
+            "support": 96
+          },
+          "disgust": {
+            "precision": 0.402,
+            "recall": 0.8333,
+            "f1": 0.5424,
+            "support": 96
+          },
+          "fearful": {
+            "precision": 0.8028,
+            "recall": 0.5938,
+            "f1": 0.6826,
+            "support": 96
+          },
+          "happy": {
+            "precision": 0.8182,
+            "recall": 0.0938,
+            "f1": 0.1682,
+            "support": 96
+          },
+          "neutral": {
+            "precision": 0.3684,
+            "recall": 0.5833,
+            "f1": 0.4516,
+            "support": 48
+          },
+          "sad": {
+            "precision": 0.32,
+            "recall": 0.3333,
+            "f1": 0.3265,
+            "support": 96
+          },
+          "surprised": {
+            "precision": 0.6047,
+            "recall": 0.5417,
+            "f1": 0.5714,
+            "support": 96
+          }
+        },
+        "confusion_matrix": [
+          [
+            81,
+            0,
+            6,
+            1,
+            0,
+            0,
+            6,
+            2
+          ],
+          [
+            3,
+            29,
+            20,
+            0,
+            0,
+            22,
+            21,
+            1
+          ],
+          [
+            4,
+            0,
+            80,
+            0,
+            0,
+            2,
+            10,
+            0
+          ],
+          [
+            4,
+            0,
+            13,
+            57,
+            0,
+            2,
+            7,
+            13
+          ],
+          [
+            20,
+            0,
+            33,
+            3,
+            9,
+            4,
+            11,
+            16
+          ],
+          [
+            10,
+            3,
+            0,
+            0,
+            0,
+            28,
+            7,
+            0
+          ],
+          [
+            8,
+            2,
+            26,
+            7,
+            2,
+            17,
+            32,
+            2
+          ],
+          [
+            13,
+            0,
+            21,
+            3,
+            0,
+            1,
+            6,
+            52
+          ]
+        ]
+      },
+      "average_cross_gender_f1": 0.5371
+    },
+    "eval_time_sec": 1.01
+  }
+}

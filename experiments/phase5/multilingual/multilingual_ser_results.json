@@ -1,0 +1,335 @@
+{
+  "acoustic_shifts": {
+    "en": {
+      "mean_f0_hz": 0.0,
+      "f0_std_hz": 0.0,
+      "rms_energy_mean": 0.0,
+      "spectral_centroid_mean": 0.0,
+      "pause_ratio_mean": 0.0
+    },
+    "hi": {
+      "mean_f0_hz": 0.0,
+      "f0_std_hz": 0.0,
+      "rms_energy_mean": 0.0,
+      "spectral_centroid_mean": 0.0,
+      "pause_ratio_mean": 0.0
+    },
+    "hinglish": {
+      "mean_f0_hz": 0.0,
+      "f0_std_hz": 0.0,
+      "rms_energy_mean": 0.0,
+      "spectral_centroid_mean": 0.0,
+      "pause_ratio_mean": 0.0
+    }
+  },
+  "language_stability": {
+    "en": {
+      "accuracy": 0.0,
+      "mean_confidence": 1.0,
+      "mean_similarity_to_english_centroid": 0.4692,
+      "sample_count": 4,
+      "predictions": [
+        {
+          "text": "I am having such a difficult and painful time right now.",
+          "target": "sad",
+          "predicted": "disgust",
+          "conf": 0.9998
+        },
+        {
+          "text": "I am so excited and genuinely joyful about this amazing news!",
+          "target": "happy",
+          "predicted": "calm",
+          "conf": 1.0
+        },
+        {
+          "text": "This is completely intolerable and frustrating!",
+          "target": "angry",
+          "predicted": "calm",
+          "conf": 1.0
+        },
+        {
+          "text": "The meeting is scheduled for tomorrow morning at nine.",
+          "target": "neutral",
+          "predicted": "calm",
+          "conf": 1.0
+        }
+      ]
+    },
+    "hi": {
+      "accuracy": 0.25,
+      "mean_confidence": 1.0,
+      "mean_similarity_to_english_centroid": 0.465,
+      "sample_count": 4,
+      "predictions": [
+        {
+          "text": "\u0906\u091c \u092e\u0941\u091d\u0947 \u092c\u0939\u0941\u0924 \u0905\u0915\u0947\u0932\u093e \u0914\u0930 \u0909\u0926\u093e\u0938 \u092e\u0939\u0938\u0942\u0938 \u0939\u094b \u0930\u0939\u093e \u0939\u0948\u0964",
+          "target": "sad",
+          "predicted": "sad",
+          "conf": 1.0
+        },
+        {
+          "text": "\u0906\u091c \u0915\u093e \u0926\u093f\u0928 \u092c\u0939\u0941\u0924 \u0939\u0940 \u0916\u0942\u092c\u0938\u0942\u0930\u0924 \u0914\u0930 \u0916\u0941\u0936\u093f\u092f\u094b\u0902 \u0938\u0947 \u092d\u0930\u093e \u0939\u0948\u0964",
+          "target": "happy",
+          "predicted": "calm",
+          "conf": 1.0
+        },
+        {
+          "text": "\u092e\u0941\u091d\u0947 \u0907\u0938 \u092c\u093e\u0924 \u092a\u0930 \u092c\u0939\u0941\u0924 \u0917\u0941\u0938\u094d\u0938\u093e \u0906 \u0930\u0939\u093e \u0939\u0948, \u092f\u0939 \u0917\u0932\u0924 \u0939\u0948\u0964",
+          "target": "angry",
+          "predicted": "calm",
+          "conf": 1.0
+        },
+        {
+          "text": "\u0915\u0932 \u0938\u0941\u092c\u0939 \u0928\u094c \u092c\u091c\u0947 \u0915\u0949\u0932\u0947\u091c \u0915\u0940 \u0915\u094d\u0932\u093e\u0938 \u0936\u0941\u0930\u0942 \u0939\u094b\u0917\u0940\u0964",
+          "target": "neutral",
+          "predicted": "calm",
+          "conf": 1.0
+        }
+      ]
+    },
+    "hinglish": {
+      "accuracy": 0.0,
+      "mean_confidence": 0.9763,
+      "mean_similarity_to_english_centroid": 0.4665,
+      "sample_count": 4,
+      "predictions": [
+        {
+          "text": "Yaar, aaj mera mood bilkul theek nahi hai. Sab bohot stressful lag raha hai.",
+          "target": "sad",
+          "predicted": "disgust",
+          "conf": 0.9053
+        },
+        {
+          "text": "Yaar I am super excited! Aaj bohot hi acchi news mili hai.",
+          "target": "happy",
+          "predicted": "calm",
+          "conf": 1.0
+        },
+        {
+          "text": "Mera dimaag kharab ho raha hai, this is totally unacceptable!",
+          "target": "angry",
+          "predicted": "calm",
+          "conf": 1.0
+        },
+        {
+          "text": "Kal subah nine o clock pe presentation start hogi.",
+          "target": "neutral",
+          "predicted": "calm",
+          "conf": 1.0
+        }
+      ]
+    }
+  },
+  "detailed_results": {
+    "en": [
+      {
+        "target_emotion": "sad",
+        "predicted_emotion": "disgust",
+        "confidence": 0.9998,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 0.0001,
+          "disgust": 0.9998,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 0.0001,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.49,
+        "text": "I am having such a difficult and painful time right now."
+      },
+      {
+        "target_emotion": "happy",
+        "predicted_emotion": "calm",
+        "confidence": 1.0,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 1.0,
+          "disgust": 0.0,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 0.0,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.4545,
+        "text": "I am so excited and genuinely joyful about this amazing news!"
+      },
+      {
+        "target_emotion": "angry",
+        "predicted_emotion": "calm",
+        "confidence": 1.0,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 1.0,
+          "disgust": 0.0,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 0.0,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.4389,
+        "text": "This is completely intolerable and frustrating!"
+      },
+      {
+        "target_emotion": "neutral",
+        "predicted_emotion": "calm",
+        "confidence": 1.0,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 1.0,
+          "disgust": 0.0,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 0.0,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.4932,
+        "text": "The meeting is scheduled for tomorrow morning at nine."
+      }
+    ],
+    "hi": [
+      {
+        "target_emotion": "sad",
+        "predicted_emotion": "sad",
+        "confidence": 1.0,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 0.0,
+          "disgust": 0.0,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 1.0,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.4463,
+        "text": "\u0906\u091c \u092e\u0941\u091d\u0947 \u092c\u0939\u0941\u0924 \u0905\u0915\u0947\u0932\u093e \u0914\u0930 \u0909\u0926\u093e\u0938 \u092e\u0939\u0938\u0942\u0938 \u0939\u094b \u0930\u0939\u093e \u0939\u0948\u0964"
+      },
+      {
+        "target_emotion": "happy",
+        "predicted_emotion": "calm",
+        "confidence": 1.0,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 1.0,
+          "disgust": 0.0,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 0.0,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.4369,
+        "text": "\u0906\u091c \u0915\u093e \u0926\u093f\u0928 \u092c\u0939\u0941\u0924 \u0939\u0940 \u0916\u0942\u092c\u0938\u0942\u0930\u0924 \u0914\u0930 \u0916\u0941\u0936\u093f\u092f\u094b\u0902 \u0938\u0947 \u092d\u0930\u093e \u0939\u0948\u0964"
+      },
+      {
+        "target_emotion": "angry",
+        "predicted_emotion": "calm",
+        "confidence": 1.0,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 1.0,
+          "disgust": 0.0,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 0.0,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.4633,
+        "text": "\u092e\u0941\u091d\u0947 \u0907\u0938 \u092c\u093e\u0924 \u092a\u0930 \u092c\u0939\u0941\u0924 \u0917\u0941\u0938\u094d\u0938\u093e \u0906 \u0930\u0939\u093e \u0939\u0948, \u092f\u0939 \u0917\u0932\u0924 \u0939\u0948\u0964"
+      },
+      {
+        "target_emotion": "neutral",
+        "predicted_emotion": "calm",
+        "confidence": 1.0,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 1.0,
+          "disgust": 0.0,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 0.0,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.5136,
+        "text": "\u0915\u0932 \u0938\u0941\u092c\u0939 \u0928\u094c \u092c\u091c\u0947 \u0915\u0949\u0932\u0947\u091c \u0915\u0940 \u0915\u094d\u0932\u093e\u0938 \u0936\u0941\u0930\u0942 \u0939\u094b\u0917\u0940\u0964"
+      }
+    ],
+    "hinglish": [
+      {
+        "target_emotion": "sad",
+        "predicted_emotion": "disgust",
+        "confidence": 0.9053,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 0.0048,
+          "disgust": 0.9053,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 0.0899,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.4877,
+        "text": "Yaar, aaj mera mood bilkul theek nahi hai. Sab bohot stressful lag raha hai."
+      },
+      {
+        "target_emotion": "happy",
+        "predicted_emotion": "calm",
+        "confidence": 1.0,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 1.0,
+          "disgust": 0.0,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 0.0,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.4345,
+        "text": "Yaar I am super excited! Aaj bohot hi acchi news mili hai."
+      },
+      {
+        "target_emotion": "angry",
+        "predicted_emotion": "calm",
+        "confidence": 1.0,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 1.0,
+          "disgust": 0.0,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 0.0,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.4422,
+        "text": "Mera dimaag kharab ho raha hai, this is totally unacceptable!"
+      },
+      {
+        "target_emotion": "neutral",
+        "predicted_emotion": "calm",
+        "confidence": 1.0,
+        "probabilities": {
+          "angry": 0.0,
+          "calm": 1.0,
+          "disgust": 0.0,
+          "fearful": 0.0,
+          "happy": 0.0,
+          "neutral": 0.0,
+          "sad": 0.0,
+          "surprised": 0.0
+        },
+        "target_centroid_similarity": 0.5017,
+        "text": "Kal subah nine o clock pe presentation start hogi."
+      }
+    ]
+  }
+}
