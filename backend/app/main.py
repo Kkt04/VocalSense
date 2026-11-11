@@ -1,3 +1,5 @@
+import time
+import uuid
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
@@ -35,7 +37,7 @@ def create_app() -> FastAPI:
         version=settings.APP_VERSION,
         description=(
             "VocalSense API — Backend service for the emotion-aware AI conversational companion. "
-            "Handles speech input, audio validation, transcription, and acoustic analysis."
+            "Handles speech input, audio validation, transcription, acoustic analysis, and conversation intelligence."
         ),
         docs_url="/docs",
         redoc_url="/redoc",
@@ -51,17 +53,43 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Correlation ID & Performance Logging Middleware
+    @app.middleware("http")
+    async def correlation_id_and_timing_middleware(request: Request, call_next):
+        req_id = request.headers.get("X-Request-ID") or f"req_{uuid.uuid4().hex[:12]}"
+        request.state.request_id = req_id
+        start_time = time.time()
+
+        response = await call_next(request)
+
+        duration_ms = (time.time() - start_time) * 1000
+        response.headers["X-Request-ID"] = req_id
+        response.headers["X-Response-Time-Ms"] = f"{duration_ms:.2f}"
+
+        logger.info(
+            "[%s] %s %s -> %d (%.1fms)",
+            req_id,
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+        )
+        return response
+
     # Global Exception Handler
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
-        logger.error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
+        req_id = getattr(request.state, "request_id", "unknown")
+        logger.error(f"[{req_id}] Unhandled exception on {request.url.path}: {exc}", exc_info=True)
         return JSONResponse(
             status_code=500,
+            headers={"X-Request-ID": req_id},
             content={
                 "success": False,
                 "error": "An unexpected server error occurred.",
                 "detail": str(exc) if settings.DEBUG else None,
                 "code": "INTERNAL_SERVER_ERROR",
+                "request_id": req_id,
             },
         )
 
@@ -80,6 +108,7 @@ def create_app() -> FastAPI:
             "status": "online",
             "docs": "/docs",
             "health": "/api/health",
+            "component_health": "/api/health/components",
         }
 
     return app

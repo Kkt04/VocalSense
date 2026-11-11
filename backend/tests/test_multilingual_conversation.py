@@ -10,6 +10,7 @@ Validates:
 7. Text-to-speech modular synthesis
 """
 
+from unittest.mock import patch
 import pytest
 from backend.app.services.language.language_detector import LanguageDetector, LanguageDetectionResult
 from backend.app.services.language.language_validator import LanguageValidator
@@ -20,6 +21,26 @@ from backend.app.services.conversation.response_generator import (
 from backend.app.services.conversation.language_prompt import build_system_prompt
 from backend.app.services.tts.tts_service import TTSService
 from backend.app.schemas.conversation import ConversationRespondRequest, ConversationTurn
+
+
+@pytest.fixture(autouse=False)
+def mock_multilingual_llm():
+    async def fake_generate(system_prompt: str, messages: list):
+        prompt_lower = system_prompt.lower()
+        if "hindi" in prompt_lower and "devanagari" in prompt_lower:
+            return "मैं समझ सकता हूँ कि आप कैसा महसूस कर रहे हैं। मैं यहाँ आपकी बात सुनने के लिए हूँ।"
+        elif "hinglish" in prompt_lower:
+            return "Arey main samajh sakta hoon yaar. Bilkul tension mat lo, main sun raha hoon."
+        elif "spanish" in prompt_lower:
+            return "Entiendo cómo te sientes. Estoy aquí para escucharte y apoyarte."
+        elif "french" in prompt_lower:
+            return "Je comprends ce que vous ressentez. Je suis là pour vous écouter."
+        else:
+            return "I hear what you are saying and I am right here with you. Take all the time you need."
+
+    with patch("backend.app.services.conversation.response_generator.LLMClient.generate", side_effect=fake_generate):
+        yield
+
 
 
 def test_language_detection_hindi_devanagari():
@@ -115,7 +136,7 @@ def test_language_validator_hinglish():
 
 
 @pytest.mark.anyio
-async def test_conversation_response_hindi_generation():
+async def test_conversation_response_hindi_generation(mock_multilingual_llm):
     req = ConversationRespondRequest(
         transcript="मुझे बहुत उदासी लग रही है।",
         conversation_style="just_listen",
@@ -129,7 +150,7 @@ async def test_conversation_response_hindi_generation():
 
 
 @pytest.mark.anyio
-async def test_conversation_response_hinglish_generation():
+async def test_conversation_response_hinglish_generation(mock_multilingual_llm):
     req = ConversationRespondRequest(
         transcript="Yaar, aaj mera mood bilkul theek nahi hai.",
         conversation_style="just_listen",
@@ -141,7 +162,7 @@ async def test_conversation_response_hinglish_generation():
 
 
 @pytest.mark.anyio
-async def test_conversation_response_english_generation():
+async def test_conversation_response_english_generation(mock_multilingual_llm):
     req = ConversationRespondRequest(
         transcript="I have been carrying this heavy stress all week.",
         conversation_style="practical_suggestions",
@@ -153,7 +174,7 @@ async def test_conversation_response_english_generation():
 
 
 @pytest.mark.anyio
-async def test_conversation_response_spanish_generation():
+async def test_conversation_response_spanish_generation(mock_multilingual_llm):
     req = ConversationRespondRequest(
         transcript="Hoy me siento muy solo.",
         detected_language="es",
@@ -165,7 +186,7 @@ async def test_conversation_response_spanish_generation():
 
 
 @pytest.mark.anyio
-async def test_conversation_all_four_styles_across_languages():
+async def test_conversation_all_four_styles_across_languages(mock_multilingual_llm):
     styles = ["just_listen", "help_me_think", "practical_suggestions", "distract_me"]
     for s in styles:
         req_hi = ConversationRespondRequest(
@@ -179,7 +200,7 @@ async def test_conversation_all_four_styles_across_languages():
 
 
 @pytest.mark.anyio
-async def test_mid_conversation_language_switching():
+async def test_mid_conversation_language_switching(mock_multilingual_llm):
     conv_id = "test_switching_conv"
 
     # Turn 1: User speaks Hindi
@@ -206,6 +227,26 @@ async def test_mid_conversation_language_switching():
     )
     res3 = await ConversationResponseGenerator.respond(req3)
     assert res3.response_language == "hinglish"
+
+
+@pytest.mark.anyio
+async def test_conversation_unconfigured_llm_returns_clear_error_and_no_fake_templates():
+    """
+    Phase 6 strict rule: Never hardcode conversational responses.
+    If the LLM is unconfigured or fails, return a clear technical error rather
+    than masquerading with pre-written template replies.
+    """
+    with patch("backend.app.services.conversation.response_generator.LLMClient.generate", return_value=None):
+        req = ConversationRespondRequest(
+            transcript="Hello, how are you feeling today?",
+            conversation_style="just_listen",
+        )
+        res = await ConversationResponseGenerator.respond(req)
+        assert res.response == ""
+        assert res.validation_passed is False
+        assert res.error is not None
+        assert "temporarily unavailable" in res.error.lower()
+
 
 
 def test_language_prompt_construction_and_emotion_signal_guardrail():

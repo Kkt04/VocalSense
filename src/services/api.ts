@@ -352,4 +352,92 @@ export async function checkConversationHealth(): Promise<{ online: boolean; data
   }
 }
 
+/**
+ * Check deep component-level health (DB, STT, Emotion, LLM, TTS).
+ */
+export async function checkComponentHealth(): Promise<{ online: boolean; data?: any; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/health/components`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      return { online: false, error: `Component health check returned status ${res.status}` };
+    }
+    const data = await res.json();
+    return { online: true, data };
+  } catch (err: unknown) {
+    return { online: false, error: err instanceof Error ? err.message : 'Components health unreachable' };
+  }
+}
+
+export interface ConversationItem {
+  conversation_id: string;
+  user_id?: string;
+  style?: string;
+  language?: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+  last_message_preview?: string;
+}
+
+export interface ConversationListResponse {
+  success: boolean;
+  conversations: ConversationItem[];
+  count: number;
+  limit: number;
+  skip: number;
+  user_id?: string;
+}
+
+/**
+ * List past conversations from MongoDB with pagination.
+ */
+export async function listConversations(
+  limit = 20,
+  skip = 0,
+  userId?: string
+): Promise<ConversationListResponse> {
+  const params = new URLSearchParams({ limit: String(limit), skip: String(skip) });
+  if (userId) params.append('user_id', userId);
+
+  const res = await fetch(`${API_BASE_URL}/api/v1/conversation/list?${params.toString()}`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to list conversations: status ${res.status}`);
+  }
+  return await res.json();
+}
+
+/**
+ * Delete a specific conversation and all associated messages from MongoDB.
+ */
+export async function deleteConversation(conversationId: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/api/v1/conversation/${encodeURIComponent(conversationId)}`, {
+    method: 'DELETE',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to delete conversation: status ${res.status}`);
+  }
+  return await res.json();
+}
+
+/**
+ * GDPR/DPDP Right-to-Erasure: permanently erase all data for a user.
+ */
+export async function deleteUserData(userId: string): Promise<{ success: boolean; purged: any; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/api/v1/conversation/user/${encodeURIComponent(userId)}/data`, {
+    method: 'DELETE',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to purge user data: status ${res.status}`);
+  }
+  return await res.json();
+}
+
 export { API_BASE_URL };

@@ -95,7 +95,7 @@ export default function Landing() {
 
       <footer className="border-t border-ink/10">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-sm text-muted">
-          <p>VocalSense. Phase 1 prototype: interface only, with simulated audio and replies.</p>
+          <p>VocalSense · Multilingual Emotion-Aware Conversational AI Companion.</p>
           <p>If you are in immediate danger, contact local emergency services or someone you trust.</p>
         </div>
       </footer>

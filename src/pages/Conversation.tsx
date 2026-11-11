@@ -16,8 +16,14 @@ import {
   predictEmotion,
   sendConversationMessage,
   checkConversationHealth,
+  checkComponentHealth,
+  listConversations,
+  deleteConversation,
+  deleteUserData,
+  getConversationHistory,
   TranscriptionResponse,
   EmotionPredictionResponse,
+  ConversationItem,
 } from '../services/api';
 
 type Phase = 'idle' | 'permission' | 'listening' | 'paused' | 'processing' | 'analysing' | 'responding' | 'error';
@@ -29,6 +35,9 @@ type Msg = {
   isEdited?: boolean;
   detectedLanguage?: string;
   languageProb?: number;
+  isError?: boolean;
+  errorMessage?: string;
+  lastTranscript?: string;
 };
 
 /* ---------- CONVERSATION STYLES ---------- */
@@ -80,7 +89,22 @@ const STYLE_MAP: Record<StyleId, string> = {
 };
 
 export default function Conversation() {
-  const [conversationId] = useState<string>(() => 'conv_' + Math.random().toString(36).substring(2, 10));
+  const [userId] = useState<string>(() => {
+    let uid = localStorage.getItem('vocalsense_user_id');
+    if (!uid) {
+      uid = 'user_' + Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('vocalsense_user_id', uid);
+    }
+    return uid;
+  });
+  const [activeConversationId, setActiveConversationId] = useState<string>(
+    () => 'conv_' + Math.random().toString(36).substring(2, 10)
+  );
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyList, setHistoryList] = useState<ConversationItem[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [purgeConfirmOpen, setPurgeConfirmOpen] = useState(false);
+
   const [phase, setPhase] = useState<Phase>('idle');
   const [style, setStyle] = useState<StyleId>('listen');
   const [mode, setMode] = useState<'voice' | 'text'>('voice');
@@ -264,7 +288,8 @@ export default function Conversation() {
     // Call multilingual emotion-aware conversation response engine
     sendConversationMessage({
       transcript: transcriptText,
-      conversation_id: conversationId,
+      conversation_id: activeConversationId,
+      user_id: userId,
       detected_language: sttResult.detected_language,
       language_preference: languagePreference === 'auto' ? undefined : languagePreference,
       conversation_style: STYLE_MAP[style],
@@ -276,6 +301,10 @@ export default function Conversation() {
       synthesize_speech: !spkMuted,
     })
       .then((convRes) => {
+        if (convRes.error && !convRes.response) {
+          throw new Error(convRes.error);
+        }
+
         setMsgs((m) => [
           ...m,
           {
@@ -301,13 +330,132 @@ export default function Conversation() {
         setPhase('responding');
       })
       .catch((convErr) => {
-        console.warn('Conversation API error, applying safe fallback:', convErr);
-        const fallbackReply = STYLES.find((s) => s.id === style)!.reply;
-        setMsgs((m) => [...m, { id: Date.now() + 1, role: 'ai', text: fallbackReply }]);
+        console.warn('Conversation API error (no canned fallback):', convErr);
+        const errMsg = convErr instanceof Error ? convErr.message : 'Conversational AI service temporarily unavailable. Please verify LLM configuration or retry.';
+        setMsgs((m) => [
+          ...m,
+          {
+            id: Date.now() + 1,
+            role: 'ai',
+            text: '',
+            isError: true,
+            errorMessage: errMsg,
+            lastTranscript: transcriptText,
+          },
+        ]);
+        setPhase('idle');
+      });
+  };
+
+  // Retry generating AI response without needing to re-record
+  const retryAiResponse = (transcriptToRetry: string) => {
+    setPhase('analysing');
+    sendConversationMessage({
+      transcript: transcriptToRetry,
+      conversation_id: activeConversationId,
+      user_id: userId,
+      conversation_style: STYLE_MAP[style],
+      synthesize_speech: !spkMuted,
+    })
+      .then((convRes) => {
+        if (convRes.error && !convRes.response) {
+          throw new Error(convRes.error);
+        }
+        setMsgs((m) => [
+          ...m.filter((x) => !x.isError),
+          {
+            id: Date.now() + 1,
+            role: 'ai',
+            text: convRes.response,
+            detectedLanguage: convRes.response_language,
+          },
+        ]);
         setProgress(0);
         setPaused(false);
         setPhase('responding');
+      })
+      .catch((err) => {
+        const errMsg = err instanceof Error ? err.message : 'Retry failed. AI service remains unavailable.';
+        setMsgs((m) => [
+          ...m.filter((x) => !x.isError),
+          {
+            id: Date.now() + 1,
+            role: 'ai',
+            text: '',
+            isError: true,
+            errorMessage: errMsg,
+            lastTranscript: transcriptToRetry,
+          },
+        ]);
+        setPhase('idle');
       });
+  };
+
+  // Past conversation history actions
+  const fetchHistoryList = async () => {
+    setLoadingHistory(true);
+    try {
+      const res = await listConversations(30, 0, userId);
+      if (res && res.conversations) {
+        setHistoryList(res.conversations);
+      }
+    } catch (e) {
+      console.warn('Failed to load past conversations:', e);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const handleOpenHistory = () => {
+    setHistoryOpen(true);
+    fetchHistoryList();
+  };
+
+  const handleSelectConversation = async (cid: string) => {
+    try {
+      const hist = await getConversationHistory(cid);
+      if (hist && hist.messages) {
+        const loadedMsgs: Msg[] = hist.messages.map((m: any, idx: number) => ({
+          id: Date.now() + idx,
+          role: m.role === 'assistant' ? 'ai' : 'user',
+          text: m.text,
+          detectedLanguage: m.detected_language,
+        }));
+        setMsgs(loadedMsgs);
+        setActiveConversationId(cid);
+        setHistoryOpen(false);
+        setTranscriptionNotice(`Loaded conversation: ${cid}`);
+      }
+    } catch (e) {
+      console.warn('Failed to load conversation history:', e);
+    }
+  };
+
+  const handleDeleteConversation = async (cid: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deleteConversation(cid);
+      setHistoryList((prev) => prev.filter((c) => c.conversation_id !== cid));
+      if (activeConversationId === cid) {
+        setMsgs([]);
+        setActiveConversationId('conv_' + Math.random().toString(36).substring(2, 10));
+      }
+    } catch (err) {
+      console.warn('Failed to delete conversation:', err);
+    }
+  };
+
+  const handlePurgeAllData = async () => {
+    try {
+      await deleteUserData(userId);
+      setMsgs([]);
+      setHistoryList([]);
+      setPurgeConfirmOpen(false);
+      setHistoryOpen(false);
+      setTranscriptionNotice('All user data and conversation history purged permanently.');
+    } catch (err) {
+      console.warn('Failed to purge user data:', err);
+    }
   };
 
   // Stop recording and process with both Whisper STT and Emotion SER
@@ -498,6 +646,15 @@ export default function Conversation() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="btn btn-ghost !py-2 text-xs"
+            onClick={handleOpenHistory}
+            title="View past conversations from MongoDB"
+          >
+            <Icon name="history" size={14} />
+            History
+          </button>
           <button
             type="button"
             className="btn btn-ghost !py-2 text-xs"
@@ -775,7 +932,29 @@ export default function Conversation() {
                       )}
                     </div>
 
-                    {editing === m.id ? (
+                    {m.isError ? (
+                      <div className="rounded-xl border border-rose-300 bg-rose-50/80 dark:bg-rose-950/20 p-3 text-xs">
+                        <div className="flex items-center gap-1.5 font-medium text-rose-800 dark:text-rose-300">
+                          <Icon name="error" size={14} />
+                          <span>AI Response Temporarily Unavailable</span>
+                        </div>
+                        <p className="mt-1 text-ink/80 leading-relaxed">
+                          {m.errorMessage || "The conversational AI service couldn't generate a reply. No fake template was used."}
+                        </p>
+                        {m.lastTranscript && (
+                          <div className="mt-2.5">
+                            <button
+                              className="btn btn-primary !py-1 !px-3 text-xs"
+                              onClick={() => retryAiResponse(m.lastTranscript!)}
+                              disabled={busy}
+                            >
+                              <Icon name="replay" size={12} />
+                              Retry Response
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : editing === m.id ? (
                       <div className="mt-1">
                         <textarea
                           className="w-full rounded-xl border border-ink/20 bg-surface p-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -1071,6 +1250,127 @@ export default function Conversation() {
           ))}
         </div>
       </section>
+
+      {/* History Drawer Modal */}
+      <AnimatePresence>
+        {historyOpen && (
+          <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="flex h-full w-full max-w-md flex-col bg-surface p-6 shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-ink/10 pb-4">
+                <div className="flex items-center gap-2">
+                  <Icon name="history" size={18} />
+                  <h2 className="font-serif text-lg">Conversation History</h2>
+                </div>
+                <button
+                  className="btn btn-ghost !p-2"
+                  onClick={() => setHistoryOpen(false)}
+                  aria-label="Close history"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto py-4">
+                {loadingHistory ? (
+                  <div className="flex h-32 items-center justify-center text-sm text-muted">
+                    Loading conversations from MongoDB...
+                  </div>
+                ) : historyList.length === 0 ? (
+                  <div className="flex h-32 flex-col items-center justify-center text-center text-sm text-muted">
+                    <p>No past conversations found.</p>
+                    <p className="text-xs text-muted/70 mt-1">Start speaking to create one.</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2.5">
+                    {historyList.map((item) => (
+                      <div
+                        key={item.conversation_id}
+                        onClick={() => handleSelectConversation(item.conversation_id)}
+                        className={`group flex cursor-pointer flex-col rounded-2xl border p-3.5 transition ${
+                          activeConversationId === item.conversation_id
+                            ? 'border-accent bg-lav/50'
+                            : 'border-ink/10 hover:bg-ink/5'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-xs text-muted">
+                          <span className="font-mono text-[11px]">
+                            {new Date(item.updated_at).toLocaleDateString([], {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {item.language && (
+                              <span className="chip !text-[10px] !py-0.2 !px-1.5 uppercase">
+                                {item.language}
+                              </span>
+                            )}
+                            <button
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-500 transition"
+                              onClick={(e) => handleDeleteConversation(item.conversation_id, e)}
+                              title="Delete conversation"
+                            >
+                              <Icon name="trash" size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="mt-1.5 text-xs text-ink line-clamp-2">
+                          {item.last_message_preview || '(Empty conversation)'}
+                        </p>
+                        <span className="mt-1 text-[10px] text-muted">
+                          {item.message_count} {item.message_count === 1 ? 'message' : 'messages'} · Style: {item.style || 'just_listen'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* GDPR User Data Purge Section */}
+              <div className="border-t border-ink/10 pt-4">
+                {purgeConfirmOpen ? (
+                  <div className="rounded-2xl bg-rose-50/80 dark:bg-rose-950/20 border border-rose-300 p-3 text-xs">
+                    <p className="font-semibold text-rose-800 dark:text-rose-300">Purge all user data?</p>
+                    <p className="mt-1 text-ink/80 text-[11px] leading-relaxed">
+                      This will permanently erase all conversations, messages, and vocal acoustic traits from MongoDB (GDPR/DPDP compliance).
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        className="btn btn-primary !py-1 !px-3 text-xs !bg-rose-600 hover:!bg-rose-700 text-white"
+                        onClick={handlePurgeAllData}
+                      >
+                        Yes, purge everything
+                      </button>
+                      <button
+                        className="btn btn-ghost !py-1 !px-3 text-xs"
+                        onClick={() => setPurgeConfirmOpen(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs text-rose-600 hover:bg-rose-50/50 transition dark:text-rose-400"
+                    onClick={() => setPurgeConfirmOpen(true)}
+                  >
+                    <Icon name="trash" size={14} />
+                    Purge All My Data (GDPR / DPDP)
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

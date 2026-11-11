@@ -146,6 +146,140 @@ class MongoDBManager:
             return doc
         return self._in_memory_fallback["conversations"].get(conversation_id)
 
+    async def list_conversations(
+        self, user_id: Optional[str] = None, limit: int = 50, skip: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        Lists conversations ordered by updated_at descending with pagination.
+        Includes latest message preview and count.
+        """
+        query: Dict[str, Any] = {}
+        if user_id:
+            query["user_id"] = user_id
+
+        if self.is_connected and self.db is not None:
+            cursor = (
+                self.db.conversations.find(query, {"_id": 0})
+                .sort("updated_at", DESCENDING)
+                .skip(skip)
+                .limit(limit)
+            )
+            convs = await cursor.to_list(length=limit)
+            # Enrich with message counts and previews
+            for conv in convs:
+                cid = conv["conversation_id"]
+                count = await self.db.messages.count_documents({"conversation_id": cid})
+                last_msg = await self.db.messages.find_one(
+                    {"conversation_id": cid},
+                    {"_id": 0, "text": 1, "role": 1, "timestamp": 1},
+                    sort=[("timestamp", DESCENDING)],
+                )
+                conv["message_count"] = count
+                conv["last_message"] = last_msg
+            return convs
+
+        # Fallback in-memory
+        all_convs = list(self._in_memory_fallback["conversations"].values())
+        if user_id:
+            all_convs = [c for c in all_convs if c.get("user_id") == user_id]
+        all_convs.sort(key=lambda x: x.get("updated_at", datetime.min), reverse=True)
+        selected = all_convs[skip : skip + limit]
+
+        for conv in selected:
+            cid = conv["conversation_id"]
+            conv_msgs = [
+                m for m in self._in_memory_fallback["messages"].values()
+                if m.get("conversation_id") == cid
+            ]
+            conv_msgs.sort(key=lambda x: x.get("timestamp", datetime.min), reverse=True)
+            conv["message_count"] = len(conv_msgs)
+            conv["last_message"] = (
+                {"text": conv_msgs[0].get("text"), "role": conv_msgs[0].get("role"), "timestamp": conv_msgs[0].get("timestamp")}
+                if conv_msgs else None
+            )
+        return selected
+
+    async def delete_conversation(self, conversation_id: str) -> bool:
+        """
+        Deletes a conversation and all its messages and emotion insights.
+        """
+        if self.is_connected and self.db is not None:
+            res = await self.db.conversations.delete_one({"conversation_id": conversation_id})
+            await self.db.messages.delete_many({"conversation_id": conversation_id})
+            await self.db.emotion_insights.delete_many({"conversation_id": conversation_id})
+            return res.deleted_count > 0
+
+        # In-memory fallback
+        deleted = False
+        if conversation_id in self._in_memory_fallback["conversations"]:
+            del self._in_memory_fallback["conversations"][conversation_id]
+            deleted = True
+
+        self._in_memory_fallback["messages"] = {
+            k: v for k, v in self._in_memory_fallback["messages"].items()
+            if v.get("conversation_id") != conversation_id
+        }
+        self._in_memory_fallback["emotion_insights"] = {
+            k: v for k, v in self._in_memory_fallback["emotion_insights"].items()
+            if v.get("conversation_id") != conversation_id
+        }
+        return deleted
+
+    async def delete_user_data(self, user_id: str) -> Dict[str, Any]:
+        """
+        Purges all user data: user profile, conversations, messages, and insights.
+        Guarantees GDPR/DPDP Right-to-Erasure compliance.
+        """
+        if self.is_connected and self.db is not None:
+            # Find all user conversations
+            user_convs = await self.db.conversations.find({"user_id": user_id}, {"conversation_id": 1}).to_list(1000)
+            cids = [c["conversation_id"] for c in user_convs]
+
+            u_res = await self.db.users.delete_one({"user_id": user_id})
+            c_res = await self.db.conversations.delete_many({"user_id": user_id})
+            m_res = await self.db.messages.delete_many({"conversation_id": {"$in": cids}})
+            e_res = await self.db.emotion_insights.delete_many({"conversation_id": {"$in": cids}})
+
+            return {
+                "user_deleted": u_res.deleted_count > 0,
+                "conversations_deleted": c_res.deleted_count,
+                "messages_deleted": m_res.deleted_count,
+                "emotion_insights_deleted": e_res.deleted_count,
+            }
+
+        # In-memory fallback
+        user_deleted = user_id in self._in_memory_fallback["users"]
+        if user_deleted:
+            del self._in_memory_fallback["users"][user_id]
+
+        user_cids = [
+            cid for cid, c in self._in_memory_fallback["conversations"].items()
+            if c.get("user_id") == user_id
+        ]
+        for cid in user_cids:
+            self._in_memory_fallback["conversations"].pop(cid, None)
+
+        orig_msg_len = len(self._in_memory_fallback["messages"])
+        self._in_memory_fallback["messages"] = {
+            k: v for k, v in self._in_memory_fallback["messages"].items()
+            if v.get("conversation_id") not in user_cids
+        }
+        msgs_del = orig_msg_len - len(self._in_memory_fallback["messages"])
+
+        orig_ins_len = len(self._in_memory_fallback["emotion_insights"])
+        self._in_memory_fallback["emotion_insights"] = {
+            k: v for k, v in self._in_memory_fallback["emotion_insights"].items()
+            if v.get("conversation_id") not in user_cids
+        }
+        ins_del = orig_ins_len - len(self._in_memory_fallback["emotion_insights"])
+
+        return {
+            "user_deleted": user_deleted,
+            "conversations_deleted": len(user_cids),
+            "messages_deleted": msgs_del,
+            "emotion_insights_deleted": ins_del,
+        }
+
     # -------------------------------------------------------------
     # Messages
     # -------------------------------------------------------------

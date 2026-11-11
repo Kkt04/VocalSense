@@ -33,6 +33,25 @@ from backend.app.schemas.conversation import ConversationRespondRequest, Convers
 from backend.app.config import settings
 
 
+@pytest.fixture
+def mock_pipeline_llm():
+    """Phase 6 rule: Mock LLM client in unit tests rather than relying on fake template conversations."""
+    async def fake_generate(system_prompt: str, messages: list):
+        prompt_lower = system_prompt.lower()
+        if "hindi" in prompt_lower and "devanagari" in prompt_lower:
+            return "नमस्ते, मैं समझ सकता हूँ कि आप कैसा महसूस कर रहे हैं। मैं यहाँ सुनने के लिए हूँ।"
+        elif "hinglish" in prompt_lower:
+            return "Yaar main bilkul samajh raha hoon. Tension mat lo, main sun raha hoon."
+        elif "spanish" in prompt_lower:
+            return "Entiendo cómo te sientes. Estoy aquí para escucharte y apoyarte."
+        else:
+            last_text = messages[-1]["content"] if messages else ""
+            return f"I hear you completely and I am listening: {last_text}"
+
+    with patch("backend.app.services.conversation.response_generator.LLMClient.generate", side_effect=fake_generate):
+        yield
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # 1. HINGLISH TRANSCRIPTION PRESERVATION — no English translation
 # ═══════════════════════════════════════════════════════════════════════════
@@ -172,6 +191,7 @@ class TestLanguageDetection:
 # 3. RESPONSE CONTEXT-AWARENESS — template fallback path
 # ═══════════════════════════════════════════════════════════════════════════
 
+@pytest.mark.usefixtures("mock_pipeline_llm")
 class TestResponseContextAwareness:
     """
     Tests that different user intents produce semantically different responses
@@ -261,6 +281,7 @@ class TestResponseContextAwareness:
 # 4. REPETITION PREVENTION — same conversation, different messages
 # ═══════════════════════════════════════════════════════════════════════════
 
+@pytest.mark.usefixtures("mock_pipeline_llm")
 class TestRepetitionPrevention:
     """
     Validates that different transcripts produce different responses.
@@ -325,7 +346,7 @@ class TestRepetitionPrevention:
 
     @pytest.mark.anyio
     async def test_template_fallback_when_llm_returns_none(self):
-        """When LLM returns None (no key / failure), template fallback must be used."""
+        """When LLM returns None (no key / failure), error must be returned (Phase 6 rule: no fake AI)."""
         with patch(
             "backend.app.services.conversation.response_generator.LLMClient.generate",
             new_callable=AsyncMock,
@@ -336,8 +357,8 @@ class TestRepetitionPrevention:
                 conversation_style="just_listen",
             )
             res = await ConversationResponseGenerator.respond(req)
-            assert len(res.response.strip()) > 0, "Template fallback returned an empty response."
-            assert res.response_language == "hinglish"
+            assert res.error is not None
+            assert "temporarily unavailable" in res.error.lower()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -664,6 +685,7 @@ class TestWhisperConfiguration:
 # 10. CONVERSATION HISTORY — context isolation between conversations
 # ═══════════════════════════════════════════════════════════════════════════
 
+@pytest.mark.usefixtures("mock_pipeline_llm")
 class TestConversationHistoryIsolation:
 
     @pytest.mark.anyio

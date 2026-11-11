@@ -258,16 +258,26 @@ class ConversationResponseGenerator:
             emotion_estimate=request.emotion_estimate,
         )
 
-        # ── 4. Fall back to template bank if LLM unavailable or failed ────────
-        llm_used = response_text is not None
-        if not llm_used:
-            response_text = cls._template_fallback(target_lang, style, request.transcript)
-            logger.debug(
-                "LLM unavailable — using template fallback for lang='%s' style='%s'.",
+        # ── 4. Verify LLM generation ──────────────────────────────────────────
+        # Phase 6 Strict Rule: Never return fake pre-written template replies masquerading as AI.
+        # If the LLM is unconfigured or fails, return an explicit service unavailable response.
+        if response_text is None or not response_text.strip():
+            logger.warning(
+                "LLM generation unavailable or failed for language '%s' and style '%s'. Returning service error.",
                 target_lang, style,
             )
-
-        assert response_text  # invariant: always a non-empty string here
+            return ConversationRespondResponse(
+                response="",
+                response_language=target_lang,
+                language_code=target_lang,
+                conversation_style=style,
+                conversation_id=conv_id,
+                user_id=user_id,
+                tts_available=False,
+                validation_passed=False,
+                code_switching_preserved=detected.is_code_switched,
+                error="Conversational AI service temporarily unavailable. Please verify LLM API configuration or retry.",
+            )
 
         # ── 5. Validate response language ─────────────────────────────────────
         is_valid, detected_res_lang, diag = LanguageValidator.validate_response_language(
@@ -277,12 +287,9 @@ class ConversationResponseGenerator:
 
         if not is_valid:
             logger.warning(
-                "Response language validation failed — expected '%s', detected '%s'. "
-                "LLM used: %s. Applying template fallback.",
-                target_lang, detected_res_lang, llm_used,
+                "Response language validation failed — expected '%s', detected '%s'.",
+                target_lang, detected_res_lang,
             )
-            response_text = cls._template_fallback(target_lang, style, request.transcript)
-            is_valid = True
 
         # ── 6. TTS synthesis ──────────────────────────────────────────────────
         tts_base64 = None

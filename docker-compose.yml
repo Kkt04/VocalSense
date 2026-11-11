@@ -1,0 +1,57 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: vocalsense-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: vocalsense-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - PORT=8000
+      - HOST=0.0.0.0
+      - CORS_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173","http://localhost:80","http://localhost"]
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DB_NAME=vocalsense
+      - WHISPER_MODEL_SIZE=base
+      - WHISPER_DEVICE=cpu
+      - WHISPER_COMPUTE_TYPE=int8
+      - EMOTION_MODEL_TYPE=traditional_svm
+      - EMOTION_CONFIDENCE_THRESHOLD=0.35
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_API_BASE_URL=${LLM_API_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai}
+      - LLM_MODEL=${LLM_MODEL:-gemini-2.0-flash}
+      - ENABLE_TTS=true
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: vocalsense-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongodb_data:
+    driver: local
