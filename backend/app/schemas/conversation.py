@@ -31,6 +31,18 @@ class ConversationRespondRequest(BaseModel):
         default=False,
         description="Whether to generate TTS audio for the response"
     )
+    llm_api_key: Optional[str] = Field(
+        None,
+        description="Optional client-provided LLM API key override"
+    )
+    llm_model: Optional[str] = Field(
+        None,
+        description="Optional LLM model override"
+    )
+    llm_base_url: Optional[str] = Field(
+        None,
+        description="Optional LLM API base URL override"
+    )
 
 
 class ConversationRespondResponse(BaseModel):

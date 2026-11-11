@@ -36,7 +36,7 @@ from backend.app.config import settings
 @pytest.fixture
 def mock_pipeline_llm():
     """Phase 6 rule: Mock LLM client in unit tests rather than relying on fake template conversations."""
-    async def fake_generate(system_prompt: str, messages: list):
+    async def fake_generate(system_prompt: str, messages: list, **kwargs):
         prompt_lower = system_prompt.lower()
         if "hindi" in prompt_lower and "devanagari" in prompt_lower:
             return "नमस्ते, मैं समझ सकता हूँ कि आप कैसा महसूस कर रहे हैं। मैं यहाँ सुनने के लिए हूँ।"

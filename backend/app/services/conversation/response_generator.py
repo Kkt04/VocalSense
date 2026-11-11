@@ -256,6 +256,9 @@ class ConversationResponseGenerator:
             is_code_switched=detected.is_code_switched,
             vocal_pattern=vocal_pattern,
             emotion_estimate=request.emotion_estimate,
+            api_key=request.llm_api_key,
+            model=request.llm_model,
+            base_url=request.llm_base_url,
         )
 
         # ── 4. Verify LLM generation ──────────────────────────────────────────
@@ -335,7 +338,7 @@ class ConversationResponseGenerator:
                 "text": response_text,
                 "detected_language": target_lang,
                 "timestamp": datetime.now(timezone.utc),
-                "metadata": {"conversation_style": style, "llm_used": llm_used},
+                "metadata": {"conversation_style": style, "llm_used": True},
             })
 
             if request.emotion_estimate:
@@ -379,6 +382,9 @@ class ConversationResponseGenerator:
         is_code_switched: bool,
         vocal_pattern: Optional[str],
         emotion_estimate: Optional[Dict[str, Any]],
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
+        base_url: Optional[str] = None,
     ) -> Optional[str]:
         """
         Build a rich system prompt and send the actual transcript + history to
@@ -400,6 +406,9 @@ class ConversationResponseGenerator:
         return await LLMClient.generate(
             system_prompt=system_prompt,
             messages=chat_messages,
+            api_key_override=api_key,
+            model_override=model,
+            base_url_override=base_url,
         )
 
     @classmethod

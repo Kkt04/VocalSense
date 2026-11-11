@@ -25,7 +25,7 @@ from backend.app.schemas.conversation import ConversationRespondRequest, Convers
 
 @pytest.fixture(autouse=False)
 def mock_multilingual_llm():
-    async def fake_generate(system_prompt: str, messages: list):
+    async def fake_generate(system_prompt: str, messages: list, **kwargs):
         prompt_lower = system_prompt.lower()
         if "hindi" in prompt_lower and "devanagari" in prompt_lower:
             return "मैं समझ सकता हूँ कि आप कैसा महसूस कर रहे हैं। मैं यहाँ आपकी बात सुनने के लिए हूँ।"

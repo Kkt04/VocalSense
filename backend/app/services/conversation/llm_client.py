@@ -43,6 +43,9 @@ class LLMClient:
         cls,
         system_prompt: str,
         messages: List[Dict[str, str]],
+        api_key_override: Optional[str] = None,
+        model_override: Optional[str] = None,
+        base_url_override: Optional[str] = None,
     ) -> Optional[str]:
         """
         Call the configured LLM and return the assistant reply text.
@@ -50,26 +53,46 @@ class LLMClient:
         Args:
             system_prompt: The system instruction for personality and language.
             messages: Chronological chat messages as [{"role": ..., "content": ...}].
+            api_key_override: Optional user-supplied API key overriding environment.
+            model_override: Optional user-supplied model name.
+            base_url_override: Optional user-supplied base URL.
 
         Returns:
             Generated text string, or None if LLM is unconfigured or the call fails.
         """
-        api_key = settings.LLM_API_KEY.strip()
+        api_key = (api_key_override or settings.LLM_API_KEY or "").strip()
         if not api_key:
             logger.debug(
                 "LLM_API_KEY not configured — skipping LLM call. "
-                "Set LLM_API_KEY in .env to enable dynamic response generation."
+                "Set LLM_API_KEY in .env or provide via client settings to enable dynamic response generation."
             )
             return None
 
+        model = (model_override or settings.LLM_MODEL).strip()
+        base_url = (base_url_override or settings.LLM_API_BASE_URL).rstrip('/')
+
+        # Auto-detect Groq keys (always start with 'gsk_')
+        if api_key.startswith("gsk_") and "generativelanguage.googleapis.com" in base_url:
+            logger.info("Auto-adapting Groq key with Groq endpoint and qwen/qwen3.8-27b model.")
+            base_url = "https://api.groq.com/openai/v1"
+            if model in ("gemini-2.0-flash", "llama-3.3-70b-versatile", "llama3-8b-8192"):
+                model = "qwen/qwen3.8-27b"
+
+        # Auto-detect OpenAI keys (start with 'sk-' and not 'gsk_')
+        if api_key.startswith("sk-") and "generativelanguage.googleapis.com" in base_url and not api_key.startswith("gsk_"):
+            logger.info("Auto-adapting OpenAI key with OpenAI endpoint and gpt-4o-mini model.")
+            base_url = "https://api.openai.com/v1"
+            if model == "gemini-2.0-flash":
+                model = "gpt-4o-mini"
+
         payload = {
-            "model": settings.LLM_MODEL,
+            "model": model,
             "messages": [{"role": "system", "content": system_prompt}] + messages,
             "max_tokens": settings.LLM_MAX_TOKENS,
             "temperature": settings.LLM_TEMPERATURE,
         }
 
-        url = f"{settings.LLM_API_BASE_URL.rstrip('/')}/chat/completions"
+        url = f"{base_url}/chat/completions"
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",

@@ -267,6 +267,9 @@ export interface ConversationRespondRequest {
   emotion_estimate?: Record<string, unknown>;
   history?: { role: string; text: string; language?: string }[];
   synthesize_speech?: boolean;
+  llm_api_key?: string;
+  llm_model?: string;
+  llm_base_url?: string;
 }
 
 export interface ConversationRespondResponse {
