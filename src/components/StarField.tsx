@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 interface Star {
   x: number;
@@ -9,29 +10,36 @@ interface Star {
   drift: number;
   driftDir: number;
   phase: number;
+  isSparkle: boolean;
 }
 
-const COUNT = 90;
+const COUNT = 100;
 
-function mkStar(W: number, H: number): Star {
+function mkStar(W: number, H: number, idx: number): Star {
   return {
     x: Math.random() * W,
     y: Math.random() * H,
-    r: Math.random() * 1.1 + 0.3,
-    alpha: Math.random() * 0.5 + 0.15,
-    speed: Math.random() * 0.18 + 0.04,
-    drift: Math.random() * 0.3 + 0.05,
+    r: Math.random() * 1.5 + 0.7,
+    alpha: Math.random() * 0.4 + 0.4,
+    speed: Math.random() * 0.16 + 0.05,
+    drift: Math.random() * 0.35 + 0.08,
     driftDir: Math.random() > 0.5 ? 1 : -1,
     phase: Math.random() * Math.PI * 2,
+    isSparkle: idx % 7 === 0, // 4-pointed sparkle star every few stars
   };
 }
 
-/** Renders a full-page canvas of gently twinkling, drifting stars.
- *  Respects prefers-reduced-motion — static dots only. */
+/**
+ * Full-page celestial background.
+ * Stars twinkle and drift:
+ * - Pure starry white in Dark Mode
+ * - Vivid sparkling golden yellow in Light Mode
+ */
 export default function StarField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const { theme } = useTheme();
+  const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -44,7 +52,7 @@ export default function StarField() {
       W = canvas.width = window.innerWidth;
       H = canvas.height = window.innerHeight;
       stars.length = 0;
-      for (let i = 0; i < COUNT; i++) stars.push(mkStar(W, H));
+      for (let i = 0; i < COUNT; i++) stars.push(mkStar(W, H, i));
     };
 
     resize();
@@ -53,28 +61,51 @@ export default function StarField() {
     let t = 0;
     const draw = () => {
       ctx.clearRect(0, 0, W, H);
-      t += 0.012;
+      t += 0.014;
+
+      const isDark = document.documentElement.classList.contains('dark') || theme === 'dark';
 
       for (const s of stars) {
-        // gentle twinkle via sin wave
-        const a = s.alpha * (0.55 + 0.45 * Math.sin(t * s.speed * 6 + s.phase));
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        // Twinkle factor via sine oscillation
+        const twinkle = 0.5 + 0.5 * Math.sin(t * s.speed * 8 + s.phase);
+        const a = Math.min(1, s.alpha * twinkle * (isDark ? 1 : 1.3));
 
-        // white in dark mode, soft ink in light
-        const isDark = document.documentElement.classList.contains('dark');
-        ctx.fillStyle = isDark
-          ? `rgba(255,255,255,${a})`
-          : `rgba(100,83,132,${a * 0.45})`;
-        ctx.fill();
+        // Colors: pure white in dark theme, vivid golden-yellow in light theme
+        const color = isDark
+          ? `rgba(255, 255, 255, ${a})`
+          : `rgba(235, 175, 25, ${a})`;
+
+        ctx.fillStyle = color;
+
+        if (s.isSparkle && s.r > 1.2) {
+          // Draw delicate 4-pointed celestial star
+          const size = s.r * 2.8 * twinkle;
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y - size);
+          ctx.quadraticCurveTo(s.x, s.y, s.x + size, s.y);
+          ctx.quadraticCurveTo(s.x, s.y, s.x, s.y + size);
+          ctx.quadraticCurveTo(s.x, s.y, s.x - size, s.y);
+          ctx.quadraticCurveTo(s.x, s.y, s.x, s.y - size);
+          ctx.fill();
+
+          // Soft ambient glow
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Standard circular starry dot
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
         if (!reduced) {
-          // gentle float upward + horizontal drift
+          // Gentle celestial float upward and horizontal drift
           s.y -= s.speed;
-          s.x += s.drift * s.driftDir * Math.sin(t + s.phase);
-          if (s.y < -4) { s.y = H + 4; s.x = Math.random() * W; }
-          if (s.x < -4) s.x = W + 4;
-          if (s.x > W + 4) s.x = -4;
+          s.x += s.drift * s.driftDir * Math.sin(t * 0.8 + s.phase);
+          if (s.y < -8) { s.y = H + 8; s.x = Math.random() * W; }
+          if (s.x < -8) s.x = W + 8;
+          if (s.x > W + 8) s.x = -8;
         }
       }
 
@@ -87,14 +118,14 @@ export default function StarField() {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', resize);
     };
-  }, [reduced]);
+  }, [reduced, theme]);
 
   return (
     <canvas
       ref={canvasRef}
       aria-hidden="true"
       className="pointer-events-none fixed inset-0 z-0"
-      style={{ opacity: 0.85 }}
+      style={{ opacity: 0.95 }}
     />
   );
 }

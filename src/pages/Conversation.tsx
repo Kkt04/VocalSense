@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Icon from '../components/Icon';
 import Logo from '../components/Logo';
-import MoodAvatar, { MoodType } from '../components/MoodAvatar';
+import MoodAvatar, { MoodType, analyzeMood } from '../components/MoodAvatar';
 import Orb, { OrbMode } from '../components/Orb';
 import StarField from '../components/StarField';
 import ThemeToggle from '../components/ThemeToggle';
@@ -110,6 +110,7 @@ export default function Conversation() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [style, setStyle] = useState<StyleId>('listen');
   const [mode, setMode] = useState<'voice' | 'text'>('voice');
+  const [companionMood, setCompanionMood] = useState<MoodType>('neutral');
   const [languagePreference] = useState<'auto'>('auto');
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [editing, setEditing] = useState<number | null>(null);
@@ -263,6 +264,47 @@ export default function Conversation() {
     setPhase('listening');
   };
 
+  // Update companion mood only when an explicit emotional word or acoustic signal is found.
+  // It remains constant and sticky across conversational turns until another mood word arrives.
+  const updateMoodFromTextOrEmotion = useCallback(
+    (text?: string, emo?: EmotionPredictionResponse | null) => {
+      // 1. Check explicit text keywords (English, Hindi, Hinglish)
+      if (text) {
+        const detected = analyzeMood(text);
+        if (detected) {
+          setCompanionMood(detected);
+          return;
+        }
+      }
+
+      // 2. Check acoustic SER model prediction if reliable
+      if (emo && emo.emotion_label && emo.is_reliable) {
+        const label = emo.emotion_label.toLowerCase();
+        const mapped: Record<string, MoodType> = {
+          happy: 'happy',
+          happiness: 'happy',
+          joy: 'happy',
+          sad: 'sad',
+          sadness: 'sad',
+          angry: 'angry',
+          anger: 'angry',
+          calm: 'calm',
+          fearful: 'fearful',
+          fear: 'fearful',
+          surprised: 'surprised',
+          surprise: 'surprised',
+          disgust: 'disgust',
+        };
+        if (mapped[label]) {
+          setCompanionMood(mapped[label]);
+          return;
+        }
+      }
+      // If no new mood word or signal is found, keep current companionMood!
+    },
+    []
+  );
+
   // Process transcription & emotion response into conversation state
   const handleTranscriptionAndEmotionResult = (
     sttResult: TranscriptionResponse,
@@ -283,6 +325,9 @@ export default function Conversation() {
       setEmotionData(emoResult);
       setHasInsights(true);
     }
+
+    // Update sticky mood from text and/or acoustic SER
+    updateMoodFromTextOrEmotion(transcriptText, emoResult);
 
     // Append user message with transcript
     setMsgs((m) => [
@@ -444,6 +489,13 @@ export default function Conversation() {
         setActiveConversationId(cid);
         setHistoryOpen(false);
         setTranscriptionNotice(`Loaded conversation: ${cid}`);
+        // Restore last detected mood from historical messages
+        for (const m of loadedMsgs) {
+          if (m.text) {
+            const detected = analyzeMood(m.text);
+            if (detected) setCompanionMood(detected);
+          }
+        }
       }
     } catch (e) {
       console.warn('Failed to load conversation history:', e);
@@ -512,6 +564,7 @@ export default function Conversation() {
           model_used: "Wav2Vec2 Deep Speech Classifier",
           processing_time_sec: 0.08,
         });
+        updateMoodFromTextOrEmotion("Yaar, mujhe kal presentation complete karna hai, lekin thoda stress lag raha hai.", { emotion_label: 'calm', is_reliable: true } as any);
         setPhase('analysing');
       }, 1200);
 
@@ -602,6 +655,7 @@ export default function Conversation() {
     setMsgs([]);
     setHasInsights(false);
     setEmotionData(null);
+    setCompanionMood('neutral');
     setTranscriptionNotice('Transcript cleared.');
   };
 
@@ -638,28 +692,8 @@ export default function Conversation() {
   const lastAi = [...msgs].reverse().find((m) => m.role === 'ai')?.id;
   const busy = phase === 'processing' || phase === 'analysing';
 
-  // Derive mood from the latest emotion data or conversation sentiment for the companion avatar
-  const currentMood: MoodType = (() => {
-    if (emotionData && emotionData.emotion_label) {
-      const label = emotionData.emotion_label.toLowerCase();
-      if (['happy', 'sad', 'angry', 'calm', 'fearful', 'surprised', 'disgust'].includes(label)) return label as MoodType;
-      if (label === 'fear') return 'fearful';
-      if (label === 'surprise') return 'surprised';
-      if (label === 'happiness' || label === 'joy') return 'happy';
-      if (label === 'anger') return 'angry';
-      if (label === 'sadness') return 'sad';
-    }
-    // Fallback: check recent message sentiment if acoustic data not yet present
-    const lastMsg = msgs[msgs.length - 1]?.text?.toLowerCase() || '';
-    if (!lastMsg) return 'neutral';
-    if (/(sad|upset|cry|crying|depress|dukh|heartbreak|down|hurt|pain|lonely)/.test(lastMsg)) return 'sad';
-    if (/(happy|great|glad|smile|love|awesome|excited|joy|kush|accha|good)/.test(lastMsg)) return 'happy';
-    if (/(angry|mad|furious|irritat|annoy|gussa|hate)/.test(lastMsg)) return 'angry';
-    if (/(stress|worry|fear|scared|nervous|anxious|panic|dar)/.test(lastMsg)) return 'fearful';
-    if (/(calm|peace|relax|chill|shanti|sukoon)/.test(lastMsg)) return 'calm';
-    if (/(wow|really|surprise|shock|kya)/.test(lastMsg)) return 'surprised';
-    return 'neutral';
-  })();
+  // The companion mood stays constant and sticky across conversational turns until a new mood word or signal arrives
+  const currentMood = companionMood;
 
   return (
     <div className="flex min-h-screen flex-col relative">
@@ -1019,6 +1053,7 @@ export default function Conversation() {
                                   x.id === m.id ? { ...x, text: draft, isEdited: true } : x
                                 )
                               );
+                              updateMoodFromTextOrEmotion(draft, null);
                               setEditing(null);
                             }}
                           >
@@ -1120,6 +1155,7 @@ export default function Conversation() {
                     const txt = textInput.trim();
                     if (!txt || busy) return;
                     setTextInput('');
+                    updateMoodFromTextOrEmotion(txt, null);
                     setMsgs((m) => [
                       ...m,
                       { id: Date.now(), role: 'user', text: txt, detectedLanguage: 'text' },
