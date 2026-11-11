@@ -229,7 +229,7 @@ export default function Conversation() {
     }
   }, [progress, phase, mode]);
 
-  // Start real recording
+  // Start real recording immediately
   const beginListeningReal = async () => {
     setDemoMode(false);
     setTranscriptionNotice(null);
@@ -238,6 +238,10 @@ export default function Conversation() {
     if (ok) {
       setPhase('listening');
     } else {
+      setCustomError(
+        recorder.errorMessage ||
+        'Microphone access was denied or is unavailable. Please grant microphone permissions in your browser and try again.'
+      );
       setPhase('error');
     }
   };
@@ -748,31 +752,11 @@ export default function Conversation() {
               <div className="flex flex-col items-center gap-2">
                 <button
                   className="btn btn-primary !px-8 !py-3.5 text-base shadow-sm"
-                  onClick={() => setPhase('permission')}
+                  onClick={beginListeningReal}
                 >
                   <Icon name="mic" />
                   Start talking
                 </button>
-              </div>
-            )}
-
-            {/* Permission Stage */}
-            {phase === 'permission' && (
-              <div className="max-w-sm rounded-2xl bg-lav p-5 text-center">
-                <p className="text-sm leading-relaxed">
-                  VocalSense listens to your words (Whisper STT) and measurable vocal traits (pitch, energy, pauses) with zero raw retention by default.
-                </p>
-                <div className="mt-4 flex flex-col sm:flex-row justify-center gap-2">
-                  <button className="btn btn-primary text-xs" onClick={beginListeningReal}>
-                    Allow Microphone
-                  </button>
-                  <button className="btn btn-soft text-xs" onClick={beginListeningDemo}>
-                    Try Demo (No Mic)
-                  </button>
-                  <button className="btn btn-ghost text-xs" onClick={() => setPhase('idle')}>
-                    Cancel
-                  </button>
-                </div>
               </div>
             )}
 
@@ -1322,11 +1306,16 @@ export default function Conversation() {
                             </button>
                           </div>
                         </div>
-                        <p className="mt-1.5 text-xs text-ink line-clamp-2">
-                          {item.last_message_preview || '(Empty conversation)'}
-                        </p>
-                        <span className="mt-1 text-[10px] text-muted">
-                          {item.message_count} {item.message_count === 1 ? 'message' : 'messages'} · Style: {item.style || 'just_listen'}
+                        <h4 className="mt-1.5 font-semibold text-xs text-ink line-clamp-1">
+                          {item.title || item.last_message_preview || `Reflection · ${(item.style || 'Voice').replace('_', ' ')}`}
+                        </h4>
+                        {item.last_message_preview && item.last_message_preview !== item.title && (
+                          <p className="mt-0.5 text-[11px] text-muted line-clamp-2">
+                            {item.last_message_preview}
+                          </p>
+                        )}
+                        <span className="mt-1 block text-[10px] text-muted">
+                          {item.message_count} {item.message_count === 1 ? 'message' : 'messages'} · Style: {(item.style || 'just_listen').replace('_', ' ')}
                         </span>
                       </div>
                     ))}

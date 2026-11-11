@@ -165,7 +165,7 @@ class MongoDBManager:
                 .limit(limit)
             )
             convs = await cursor.to_list(length=limit)
-            # Enrich with message counts and previews
+            # Enrich with message counts, meaningful titles, and previews
             for conv in convs:
                 cid = conv["conversation_id"]
                 count = await self.db.messages.count_documents({"conversation_id": cid})
@@ -174,8 +174,35 @@ class MongoDBManager:
                     {"_id": 0, "text": 1, "role": 1, "timestamp": 1},
                     sort=[("timestamp", DESCENDING)],
                 )
+                first_user_msg = await self.db.messages.find_one(
+                    {"conversation_id": cid, "role": "user"},
+                    {"_id": 0, "text": 1},
+                    sort=[("timestamp", ASCENDING)],
+                )
                 conv["message_count"] = count
                 conv["last_message"] = last_msg
+
+                # Meaningful title
+                if conv.get("title"):
+                    title = conv["title"]
+                elif first_user_msg and first_user_msg.get("text"):
+                    ftext = first_user_msg["text"].strip()
+                    title = ftext if len(ftext) <= 45 else ftext[:42].strip() + "…"
+                elif last_msg and last_msg.get("text"):
+                    ltext = last_msg["text"].strip()
+                    title = ltext if len(ltext) <= 45 else ltext[:42].strip() + "…"
+                else:
+                    style_name = conv.get("style", "just_listen").replace("_", " ").title()
+                    title = f"Reflection · {style_name}"
+                conv["title"] = title
+
+                # Meaningful preview
+                if last_msg and last_msg.get("text"):
+                    conv["last_message_preview"] = last_msg["text"]
+                elif first_user_msg and first_user_msg.get("text"):
+                    conv["last_message_preview"] = first_user_msg["text"]
+                else:
+                    conv["last_message_preview"] = "Voice reflection"
             return convs
 
         # Fallback in-memory
@@ -193,10 +220,33 @@ class MongoDBManager:
             ]
             conv_msgs.sort(key=lambda x: x.get("timestamp", datetime.min), reverse=True)
             conv["message_count"] = len(conv_msgs)
-            conv["last_message"] = (
+            last_msg = (
                 {"text": conv_msgs[0].get("text"), "role": conv_msgs[0].get("role"), "timestamp": conv_msgs[0].get("timestamp")}
                 if conv_msgs else None
             )
+            conv["last_message"] = last_msg
+
+            first_user_msgs = [m for m in reversed(conv_msgs) if m.get("role") == "user"]
+            first_user_text = first_user_msgs[0].get("text", "").strip() if first_user_msgs else ""
+
+            if conv.get("title"):
+                title = conv["title"]
+            elif first_user_text:
+                title = first_user_text if len(first_user_text) <= 45 else first_user_text[:42].strip() + "…"
+            elif last_msg and last_msg.get("text"):
+                ltext = last_msg["text"].strip()
+                title = ltext if len(ltext) <= 45 else ltext[:42].strip() + "…"
+            else:
+                style_name = conv.get("style", "just_listen").replace("_", " ").title()
+                title = f"Reflection · {style_name}"
+            conv["title"] = title
+
+            if last_msg and last_msg.get("text"):
+                conv["last_message_preview"] = last_msg["text"]
+            elif first_user_text:
+                conv["last_message_preview"] = first_user_text
+            else:
+                conv["last_message_preview"] = "Voice reflection"
         return selected
 
     async def delete_conversation(self, conversation_id: str) -> bool:

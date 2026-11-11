@@ -311,9 +311,18 @@ class ConversationResponseGenerator:
         # ── 7. Persist to MongoDB ─────────────────────────────────────────────
         try:
             now = datetime.now(timezone.utc)
+            existing_conv = await mongodb_manager.get_conversation(conv_id)
+            title = None
+            if existing_conv and existing_conv.get("title"):
+                title = existing_conv["title"]
+            else:
+                transcript_text = request.transcript.strip()
+                title = transcript_text if len(transcript_text) <= 45 else transcript_text[:42].strip() + "…"
+
             await mongodb_manager.save_conversation({
                 "conversation_id": conv_id,
                 "user_id": user_id,
+                "title": title,
                 "style": style,
                 "language": target_lang,
                 "updated_at": now,

@@ -377,6 +377,7 @@ export async function checkComponentHealth(): Promise<{ online: boolean; data?: 
 export interface ConversationItem {
   conversation_id: string;
   user_id?: string;
+  title?: string;
   style?: string;
   language?: string;
   created_at: string;
