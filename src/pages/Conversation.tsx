@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Icon from '../components/Icon';
 import Logo from '../components/Logo';
+import MoodAvatar, { MoodType } from '../components/MoodAvatar';
 import Orb, { OrbMode } from '../components/Orb';
+import StarField from '../components/StarField';
 import ThemeToggle from '../components/ThemeToggle';
 import Waveform from '../components/Waveform';
 import AudioUploader from '../components/AudioUploader';
@@ -130,6 +132,10 @@ export default function Conversation() {
 
   const timers = useRef<number[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const msgContainerRef = useRef<HTMLDivElement>(null);
+  const userIsScrolledUp = useRef(false);
+  const ttsRef = useRef<HTMLAudioElement | null>(null);
+  const [textInput, setTextInput] = useState('');
   const later = useCallback((fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
   }, []);
@@ -139,9 +145,12 @@ export default function Conversation() {
   };
   useEffect(() => clearTimers, []);
 
-  // Auto-scroll conversation to latest message
+  // Auto-scroll conversation only if user hasn't manually scrolled up
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = msgContainerRef.current;
+    if (!container || userIsScrolledUp.current) return;
+    // Scroll the inner container, not the page
+    container.scrollTop = container.scrollHeight;
   }, [msgs]);
 
   // Real microphone audio recorder hook
@@ -323,7 +332,13 @@ export default function Conversation() {
         if (convRes.tts_audio_base64 && !spkMuted) {
           try {
             const audio = new Audio(`data:${convRes.audio_mime_type || 'audio/mpeg'};base64,${convRes.tts_audio_base64}`);
+            ttsRef.current = audio;
             audio.play().catch((e) => console.log('Audio autoplay info:', e));
+            audio.onended = () => {
+              ttsRef.current = null;
+              setPhase('idle');
+              setProgress(100);
+            };
           } catch (audioErr) {
             console.warn('TTS playback issue:', audioErr);
           }
@@ -605,6 +620,11 @@ export default function Conversation() {
   };
 
   const stopPlayback = () => {
+    if (ttsRef.current) {
+      ttsRef.current.pause();
+      ttsRef.current.currentTime = 0;
+      ttsRef.current = null;
+    }
     setPaused(false);
     setPhase('idle');
   };
@@ -618,10 +638,34 @@ export default function Conversation() {
   const lastAi = [...msgs].reverse().find((m) => m.role === 'ai')?.id;
   const busy = phase === 'processing' || phase === 'analysing';
 
+  // Derive mood from the latest emotion data or conversation sentiment for the companion avatar
+  const currentMood: MoodType = (() => {
+    if (emotionData && emotionData.emotion_label) {
+      const label = emotionData.emotion_label.toLowerCase();
+      if (['happy', 'sad', 'angry', 'calm', 'fearful', 'surprised', 'disgust'].includes(label)) return label as MoodType;
+      if (label === 'fear') return 'fearful';
+      if (label === 'surprise') return 'surprised';
+      if (label === 'happiness' || label === 'joy') return 'happy';
+      if (label === 'anger') return 'angry';
+      if (label === 'sadness') return 'sad';
+    }
+    // Fallback: check recent message sentiment if acoustic data not yet present
+    const lastMsg = msgs[msgs.length - 1]?.text?.toLowerCase() || '';
+    if (!lastMsg) return 'neutral';
+    if (/(sad|upset|cry|crying|depress|dukh|heartbreak|down|hurt|pain|lonely)/.test(lastMsg)) return 'sad';
+    if (/(happy|great|glad|smile|love|awesome|excited|joy|kush|accha|good)/.test(lastMsg)) return 'happy';
+    if (/(angry|mad|furious|irritat|annoy|gussa|hate)/.test(lastMsg)) return 'angry';
+    if (/(stress|worry|fear|scared|nervous|anxious|panic|dar)/.test(lastMsg)) return 'fearful';
+    if (/(calm|peace|relax|chill|shanti|sukoon)/.test(lastMsg)) return 'calm';
+    if (/(wow|really|surprise|shock|kya)/.test(lastMsg)) return 'surprised';
+    return 'neutral';
+  })();
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col relative">
+      <StarField />
       {/* Header */}
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4 relative z-10">
         <div className="flex items-center gap-4">
           <Logo />
           {/* Backend Status indicator */}
@@ -723,7 +767,7 @@ export default function Conversation() {
         )}
       </AnimatePresence>
 
-      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-5 px-5 pb-8 lg:grid-cols-[1fr_1.05fr]">
+      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-5 px-5 pb-8 lg:grid-cols-[1fr_1.05fr] relative z-10">
         {/* Voice Stage */}
         <section className="card flex flex-col items-center px-6 py-8" aria-label="Voice stage">
           <Orb mode={orb} level={level} className="w-56 sm:w-64" />
@@ -878,7 +922,16 @@ export default function Conversation() {
         <div className="flex flex-col gap-5">
           <section className="card flex min-h-[18rem] flex-1 flex-col p-6" aria-label="Conversation">
             <div className="flex items-center justify-between">
-              <h2 className="font-serif text-xl">Conversation</h2>
+              <div className="flex items-center gap-3">
+                <MoodAvatar mood={currentMood} size={42} />
+                <div>
+                  <h2 className="font-serif text-xl leading-tight">Conversation</h2>
+                  <span className="text-[11px] text-muted flex items-center gap-1.5 capitalize">
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+                    Mood: {currentMood}
+                  </span>
+                </div>
+              </div>
               {msgs.length > 0 && (
                 <button
                   type="button"
@@ -890,7 +943,17 @@ export default function Conversation() {
               )}
             </div>
 
-            <div className="mt-4 flex flex-col gap-3 max-h-[420px] overflow-y-auto pr-1 scroll-smooth" aria-live="polite">
+            <div
+              ref={msgContainerRef}
+              className="mt-4 flex flex-col gap-3 max-h-[420px] overflow-y-auto pr-1"
+              aria-live="polite"
+              onScroll={() => {
+                const el = msgContainerRef.current;
+                if (!el) return;
+                // If user scrolled more than 60px from the bottom, they're reading history
+                userIsScrolledUp.current = el.scrollHeight - el.scrollTop - el.clientHeight > 60;
+              }}
+            >
               {msgs.length === 0 && (
                 <div className="grid flex-1 place-items-center rounded-2xl border border-dashed border-ink/15 p-6 text-center text-sm text-muted">
                   Speak in English, Hindi, or Hinglish. Your words will be transcribed by Whisper and displayed here.
@@ -993,7 +1056,17 @@ export default function Conversation() {
                               <button
                                 className="btn btn-soft !p-2"
                                 aria-label={paused ? 'Resume playback' : 'Pause playback'}
-                                onClick={() => setPaused((p) => !p)}
+                                onClick={() => {
+                                  const willPause = !paused;
+                                  setPaused(willPause);
+                                  if (ttsRef.current) {
+                                    if (willPause) {
+                                      ttsRef.current.pause();
+                                    } else {
+                                      ttsRef.current.play().catch(() => {});
+                                    }
+                                  }
+                                }}
                               >
                                 <Icon name={paused ? 'play' : 'pause'} size={16} />
                               </button>
@@ -1036,6 +1109,78 @@ export default function Conversation() {
               </AnimatePresence>
               <div ref={messagesEndRef} />
             </div>
+
+            {/* Text mode input bar */}
+            {mode === 'text' && (
+              <div className="mt-4 border-t border-ink/10 pt-4">
+                <form
+                  className="flex gap-2"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const txt = textInput.trim();
+                    if (!txt || busy) return;
+                    setTextInput('');
+                    setMsgs((m) => [
+                      ...m,
+                      { id: Date.now(), role: 'user', text: txt, detectedLanguage: 'text' },
+                    ]);
+                    setPhase('analysing');
+                    await sendConversationMessage({
+                      transcript: txt,
+                      conversation_id: activeConversationId,
+                      user_id: userId,
+                      detected_language: 'en',
+                      conversation_style: STYLE_MAP[style],
+                      synthesize_speech: false,
+                    }).then((convRes) => {
+                      if (convRes.error && !convRes.response) throw new Error(convRes.error);
+                      setMsgs((m) => [
+                        ...m,
+                        { id: Date.now() + 1, role: 'ai', text: convRes.response, detectedLanguage: convRes.response_language },
+                      ]);
+                      if (convRes.conversation_id) setActiveConversationId(convRes.conversation_id);
+                      setPhase('idle');
+                    }).catch((err) => {
+                      const errMsg = err instanceof Error ? err.message : 'Conversational AI unavailable.';
+                      setMsgs((m) => [
+                        ...m,
+                        { id: Date.now() + 1, role: 'ai', text: '', isError: true, errorMessage: errMsg, lastTranscript: txt },
+                      ]);
+                      setPhase('idle');
+                    });
+                  }}
+                >
+                  <textarea
+                    rows={2}
+                    className="flex-1 resize-none rounded-2xl border border-ink/15 bg-bg px-4 py-3 text-sm text-ink placeholder:text-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    value={textInput}
+                    onChange={(e) => setTextInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        e.currentTarget.form?.requestSubmit();
+                      }
+                    }}
+                    placeholder={[
+                      'The quietest voice in the room often has the most to say.',
+                      "Start where you are. Use what you have. Do what you can.",
+                      'You don\'t have to be okay. Just be here.',
+                      'Every feeling is valid. Type it out.',
+                      'What\'s on your mind? Say it in any language.',
+                    ][Math.floor(Date.now() / 86400000) % 5]}
+                    disabled={busy}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!textInput.trim() || busy}
+                    className="btn btn-primary self-end !px-5"
+                  >
+                    <Icon name="arrow" size={16} />
+                  </button>
+                </form>
+                <p className="mt-1.5 text-[11px] text-muted">Press Enter to send · Shift+Enter for new line</p>
+              </div>
+            )}
           </section>
 
           {/* Settings & Controls */}

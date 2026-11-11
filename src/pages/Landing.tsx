@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import Icon from '../components/Icon';
 import Logo from '../components/Logo';
 import Orb from '../components/Orb';
+import StarField from '../components/StarField';
 import ThemeToggle from '../components/ThemeToggle';
 import Waveform from '../components/Waveform';
 import { useSimulatedAudio } from '../hooks/useSimulatedAudio';
@@ -87,8 +88,9 @@ const steps = [
 export default function Landing() {
   const { bars } = useSimulatedAudio(true, 44);
   return (
-    <div className="min-h-screen">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
+    <div className="min-h-screen relative">
+      <StarField />
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 relative z-10">
         <Logo />
         <nav className="flex items-center gap-2">
           <a href="#how" className="btn hidden sm:inline-flex">How it works</a>
@@ -97,7 +99,7 @@ export default function Landing() {
         </nav>
       </header>
 
-      <main>
+      <main className="relative z-10">
         <section className="mx-auto grid max-w-6xl items-center gap-10 px-5 pb-20 pt-8 lg:grid-cols-[1.1fr_.9fr] lg:pt-16">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <h1 className="max-w-xl font-serif text-5xl leading-[1.08] sm:text-6xl">Sometimes, you just need someone to listen.</h1>
@@ -163,7 +165,7 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-ink/10">
+      <footer className="border-t border-ink/10 relative z-10">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-sm text-muted">
           <p>VocalSense · Multilingual Emotion-Aware Conversational AI Companion.</p>
           <p>If you are in immediate danger, contact local emergency services or someone you trust.</p>

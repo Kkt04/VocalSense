@@ -4,31 +4,31 @@
 
 /* Light pastel theme (default) — channel values so Tailwind opacity modifiers work */
 :root {
-  --bg: 250 248 244;      /* warm ivory   #FAF8F4 */
-  --surface: 255 254 252;
-  --lav: 233 224 242;     /* soft lavender #E9E0F2 */
-  --deep: 142 123 170;    /* deep lavender #8E7BAA */
-  --accent: 112 96 140;   /* accessible accent for text/buttons */
+  --bg: 244 241 237;      /* warm parchment  #F4F1ED */
+  --surface: 255 253 250; /* near-white card  #FFFDFA */
+  --lav: 229 218 242;     /* soft lavender    #E5DAF2 */
+  --deep: 130 110 162;    /* deep lavender    #826EA2 */
+  --accent: 100 83 132;   /* accessible accent for text/buttons #645384 */
   --onaccent: 255 255 255;
-  --pink: 243 229 232;    /* pale pink    #F3E5E8 */
-  --sage: 221 231 221;    /* muted sage   #DDE7DD */
-  --peach: 244 225 212;   /* soft peach   #F4E1D4 */
-  --ink: 52 48 58;        /* dark text    #34303A */
-  --muted: 105 99 115;
+  --pink: 243 227 232;    /* pale pink        #F3E3E8 */
+  --sage: 214 228 214;    /* muted sage       #D6E4D6 */
+  --peach: 245 221 207;   /* soft peach       #F5DDD0 */
+  --ink: 38 34 46;        /* deep dark text   #26222E */
+  --muted: 100 93 112;    /* readable muted   #645D70 */
 }
-/* Dark pastel theme — dusky plum base, the same pastel hues as accents */
+/* Dark pastel theme — dusky plum base, same pastel hues as accents */
 .dark {
-  --bg: 27 24 34;
-  --surface: 38 34 48;
-  --lav: 61 52 80;
+  --bg: 25 22 32;
+  --surface: 36 32 46;
+  --lav: 60 50 80;
   --deep: 150 132 184;
-  --accent: 203 188 230;
-  --onaccent: 30 26 40;
-  --pink: 79 59 71;
-  --sage: 52 66 58;
-  --peach: 84 66 56;
+  --accent: 200 185 228;
+  --onaccent: 28 24 38;
+  --pink: 76 56 68;
+  --sage: 50 64 56;
+  --peach: 80 62 52;
   --ink: 236 231 242;
-  --muted: 170 163 182;
+  --muted: 168 161 180;
 }
 html { color-scheme: light; scroll-behavior: smooth; }
 html.dark { color-scheme: dark; }
@@ -44,6 +44,10 @@ body { @apply bg-bg font-sans text-ink antialiased; transition: background-color
   .card { @apply rounded-3xl border border-ink/10 bg-surface shadow-soft; }
   .chip { @apply inline-flex items-center rounded-full bg-peach px-3 py-1 text-xs font-medium text-ink; }
 }
+
+/* Light mode: stronger card shadow and readable chip contrast */
+:root .card, :root .card-hover { box-shadow: 0 4px 24px -4px rgba(38,34,46,0.13), 0 1px 4px -1px rgba(38,34,46,0.07); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }

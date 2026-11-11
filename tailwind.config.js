@@ -7,7 +7,7 @@ export default {
       colors: { bg: c('bg'), surface: c('surface'), lav: c('lav'), deep: c('deep'), accent: c('accent'),
         onaccent: c('onaccent'), pink: c('pink'), sage: c('sage'), peach: c('peach'), ink: c('ink'), muted: c('muted') },
       fontFamily: { serif: ['"DM Serif Display"', 'Georgia', 'serif'], sans: ['"DM Sans"', 'Inter', 'system-ui', 'sans-serif'] },
-      boxShadow: { soft: '0 10px 40px -18px rgb(var(--ink) / .22)', orb: '0 30px 80px -24px rgb(var(--deep) / .55)' },
+      boxShadow: { soft: '0 6px 32px -8px rgb(var(--ink) / .15), 0 1px 4px -1px rgb(var(--ink) / .08)', orb: '0 30px 80px -24px rgb(var(--deep) / .55)' },
     },
   },
   plugins: [],
