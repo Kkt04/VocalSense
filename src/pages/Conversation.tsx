@@ -40,6 +40,8 @@ type Msg = {
   isError?: boolean;
   errorMessage?: string;
   lastTranscript?: string;
+  ttsAudioBase64?: string | null;
+  audioMimeType?: string | null;
 };
 
 /* ---------- CONVERSATION STYLES ---------- */
@@ -99,9 +101,13 @@ export default function Conversation() {
     }
     return uid;
   });
-  const [activeConversationId, setActiveConversationId] = useState<string>(
-    () => 'conv_' + Math.random().toString(36).substring(2, 10)
-  );
+  const [activeConversationId, setActiveConversationId] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('vs_active_conv_id');
+      if (saved) return saved;
+    } catch {}
+    return 'conv_' + Math.random().toString(36).substring(2, 10);
+  });
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyList, setHistoryList] = useState<ConversationItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -110,9 +116,24 @@ export default function Conversation() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [style, setStyle] = useState<StyleId>('listen');
   const [mode, setMode] = useState<'voice' | 'text'>('voice');
-  const [companionMood, setCompanionMood] = useState<MoodType>('neutral');
+  const [companionMood, setCompanionMood] = useState<MoodType>(() => {
+    try {
+      const saved = localStorage.getItem('vs_active_mood');
+      if (saved) return saved as MoodType;
+    } catch {}
+    return 'neutral';
+  });
   const [languagePreference] = useState<'auto'>('auto');
-  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [msgs, setMsgs] = useState<Msg[]>(() => {
+    try {
+      const saved = localStorage.getItem('vs_active_msgs');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
   const [editing, setEditing] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
   const [progress, setProgress] = useState(0);
@@ -136,7 +157,48 @@ export default function Conversation() {
   const msgContainerRef = useRef<HTMLDivElement>(null);
   const userIsScrolledUp = useRef(false);
   const ttsRef = useRef<HTMLAudioElement | null>(null);
+  const lastAudioDataRef = useRef<{ base64?: string | null; mime?: string | null; text?: string; lang?: string } | null>(null);
+  const [playingMsgId, setPlayingMsgId] = useState<number | null>(null);
   const [textInput, setTextInput] = useState('');
+
+  // Persist conversation across tab switching, page reloads, and background freezing
+  useEffect(() => {
+    try {
+      localStorage.setItem('vs_active_conv_id', activeConversationId);
+    } catch {}
+  }, [activeConversationId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('vs_active_msgs', JSON.stringify(msgs));
+    } catch {}
+  }, [msgs]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('vs_active_mood', companionMood);
+    } catch {}
+  }, [companionMood]);
+
+  // Synchronize on tab visibility restore
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          const cached = localStorage.getItem('vs_active_msgs');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setMsgs((curr) => (curr.length === 0 ? parsed : curr));
+            }
+          }
+        } catch {}
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
   const later = useCallback((fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
   }, []);
@@ -146,12 +208,125 @@ export default function Conversation() {
   };
   useEffect(() => clearTimers, []);
 
+  // Web Speech API browser fallback synthesizer
+  const speakWithBrowserSynth = useCallback((text: string, lang?: string, msgId?: number) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      setPhase('idle');
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    if (lang === 'hi' || lang === 'hinglish') utterance.lang = 'hi-IN';
+    else if (lang === 'es') utterance.lang = 'es-ES';
+    else if (lang === 'fr') utterance.lang = 'fr-FR';
+    else if (lang === 'de') utterance.lang = 'de-DE';
+    else utterance.lang = 'en-US';
+    utterance.rate = 0.95;
+
+    utterance.onend = () => {
+      setPlayingMsgId(null);
+      setPhase('idle');
+      setProgress(100);
+    };
+    utterance.onerror = () => {
+      setPlayingMsgId(null);
+      setPhase('idle');
+    };
+
+    window.speechSynthesis.speak(utterance);
+    if (msgId) setPlayingMsgId(msgId);
+    setPhase('responding');
+  }, []);
+
+  // Universal audio playback: high quality pre-synthesized audio with fallback to browser speech synthesis
+  const playAudioForText = useCallback(
+    (
+      text: string,
+      base64?: string | null,
+      mime?: string | null,
+      lang?: string,
+      msgId?: number
+    ) => {
+      // Toggle pause/resume if already playing this message
+      if (playingMsgId === msgId && ttsRef.current) {
+        if (paused) {
+          ttsRef.current.play().catch(() => {});
+          setPaused(false);
+          setPhase('responding');
+        } else {
+          ttsRef.current.pause();
+          setPaused(true);
+        }
+        return;
+      }
+
+      // Stop any existing playback
+      if (ttsRef.current) {
+        ttsRef.current.pause();
+        ttsRef.current.currentTime = 0;
+        ttsRef.current = null;
+      }
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+
+      lastAudioDataRef.current = { base64, mime, text, lang };
+      if (msgId) setPlayingMsgId(msgId);
+      setProgress(0);
+      setPaused(false);
+      setPhase('responding');
+
+      if (base64) {
+        try {
+          const audio = new Audio(`data:${mime || 'audio/mpeg'};base64,${base64}`);
+          ttsRef.current = audio;
+          audio.play().catch((e) => {
+            console.log('Audio autoplay blocked, using browser synthesis:', e);
+            speakWithBrowserSynth(text, lang, msgId);
+          });
+          audio.ontimeupdate = () => {
+            if (audio.duration && !isNaN(audio.duration) && audio.duration > 0) {
+              setProgress(Math.round((audio.currentTime / audio.duration) * 100));
+            }
+          };
+          audio.onended = () => {
+            ttsRef.current = null;
+            setPlayingMsgId(null);
+            setPhase('idle');
+            setProgress(100);
+          };
+          return;
+        } catch (e) {
+          console.warn('Audio base64 load error:', e);
+        }
+      }
+
+      speakWithBrowserSynth(text, lang, msgId);
+    },
+    [playingMsgId, paused, speakWithBrowserSynth]
+  );
+
   // Auto-scroll conversation only if user hasn't manually scrolled up
   useEffect(() => {
     const container = msgContainerRef.current;
     if (!container || userIsScrolledUp.current) return;
     // Scroll the inner container, not the page
     container.scrollTop = container.scrollHeight;
+  }, [msgs]);
+
+  // Automatically evaluate and set mood whenever messages update
+  useEffect(() => {
+    if (msgs.length === 0) return;
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      const text = msgs[i].text;
+      if (text) {
+        const detected = analyzeMood(text);
+        if (detected) {
+          setCompanionMood(detected);
+          break;
+        }
+      }
+    }
   }, [msgs]);
 
   // Real microphone audio recorder hook
@@ -363,35 +538,39 @@ export default function Conversation() {
           throw new Error(convRes.error);
         }
 
+        const lastMsgId = Date.now() + 1;
         setMsgs((m) => [
           ...m,
           {
-            id: Date.now() + 1,
+            id: lastMsgId,
             role: 'ai',
             text: convRes.response,
             detectedLanguage: convRes.response_language,
+            ttsAudioBase64: convRes.tts_audio_base64,
+            audioMimeType: convRes.audio_mime_type,
           },
         ]);
 
-        // Synthesize TTS audio if available
-        if (convRes.tts_audio_base64 && !spkMuted) {
-          try {
-            const audio = new Audio(`data:${convRes.audio_mime_type || 'audio/mpeg'};base64,${convRes.tts_audio_base64}`);
-            ttsRef.current = audio;
-            audio.play().catch((e) => console.log('Audio autoplay info:', e));
-            audio.onended = () => {
-              ttsRef.current = null;
-              setPhase('idle');
-              setProgress(100);
-            };
-          } catch (audioErr) {
-            console.warn('TTS playback issue:', audioErr);
-          }
-        }
+        updateMoodFromTextOrEmotion(convRes.response, null);
 
-        setProgress(0);
-        setPaused(false);
-        setPhase('responding');
+        // Play TTS audio if available and not muted
+        if (convRes.tts_audio_base64 && !spkMuted) {
+          playAudioForText(
+            convRes.response,
+            convRes.tts_audio_base64,
+            convRes.audio_mime_type,
+            convRes.response_language,
+            lastMsgId
+          );
+        } else {
+          lastAudioDataRef.current = {
+            base64: convRes.tts_audio_base64,
+            mime: convRes.audio_mime_type,
+            text: convRes.response,
+            lang: convRes.response_language,
+          };
+          setPhase('idle');
+        }
       })
       .catch((convErr) => {
         console.warn('Conversation API error (no canned fallback):', convErr);
@@ -434,6 +613,7 @@ export default function Conversation() {
             detectedLanguage: convRes.response_language,
           },
         ]);
+        updateMoodFromTextOrEmotion(convRes.response, null);
         setProgress(0);
         setPaused(false);
         setPhase('responding');
@@ -657,6 +837,9 @@ export default function Conversation() {
     setEmotionData(null);
     setCompanionMood('neutral');
     setTranscriptionNotice('Transcript cleared.');
+    try {
+      localStorage.removeItem('vs_active_msgs');
+    } catch {}
   };
 
   const retry = () => {
@@ -668,9 +851,19 @@ export default function Conversation() {
   };
 
   const replay = () => {
-    setProgress(0);
-    setPaused(false);
-    setPhase('responding');
+    const last = lastAudioDataRef.current;
+    const lastAiMsg = [...msgs].reverse().find((m) => m.role === 'ai' && !m.isError);
+    if (last && last.text) {
+      playAudioForText(last.text, last.base64, last.mime, last.lang, lastAiMsg?.id);
+    } else if (lastAiMsg && lastAiMsg.text) {
+      playAudioForText(
+        lastAiMsg.text,
+        lastAiMsg.ttsAudioBase64,
+        lastAiMsg.audioMimeType,
+        lastAiMsg.detectedLanguage,
+        lastAiMsg.id
+      );
+    }
   };
 
   const stopPlayback = () => {
@@ -679,6 +872,10 @@ export default function Conversation() {
       ttsRef.current.currentTime = 0;
       ttsRef.current = null;
     }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setPlayingMsgId(null);
     setPaused(false);
     setPhase('idle');
   };
@@ -686,6 +883,10 @@ export default function Conversation() {
   const endSession = () => {
     clearTimers();
     recorder.cancelRecording();
+    stopPlayback();
+    try {
+      localStorage.removeItem('vs_active_msgs');
+    } catch {}
     window.location.hash = '#/';
   };
 
@@ -1085,56 +1286,49 @@ export default function Conversation() {
                             {m.isEdited && <span className="text-[11px] italic">(edited)</span>}
                           </div>
                         )}
-                        {m.role === 'ai' && m.id === lastAi && mode === 'voice' && (
+                        {m.role === 'ai' && !m.isError && m.text && (
                           <div className="mt-3 flex items-center gap-2">
-                            {phase === 'responding' ? (
-                              <button
-                                className="btn btn-soft !p-2"
-                                aria-label={paused ? 'Resume playback' : 'Pause playback'}
-                                onClick={() => {
-                                  const willPause = !paused;
-                                  setPaused(willPause);
-                                  if (ttsRef.current) {
-                                    if (willPause) {
-                                      ttsRef.current.pause();
-                                    } else {
-                                      ttsRef.current.play().catch(() => {});
-                                    }
-                                  }
-                                }}
-                              >
-                                <Icon name={paused ? 'play' : 'pause'} size={16} />
-                              </button>
-                            ) : (
-                              <button
-                                className="btn btn-soft !p-2"
-                                aria-label="Replay response"
-                                onClick={replay}
-                              >
-                                <Icon name="replay" size={16} />
-                              </button>
-                            )}
                             <button
-                              className="btn btn-soft !p-2"
-                              aria-label={spkMuted ? 'Unmute playback' : 'Mute playback'}
-                              aria-pressed={spkMuted}
-                              onClick={() => setSpkMuted((s) => !s)}
+                              type="button"
+                              className="btn btn-soft !py-1 !px-3 text-xs flex items-center gap-1.5"
+                              aria-label={playingMsgId === m.id && !paused ? 'Pause voice' : 'Listen to voice'}
+                              onClick={() => playAudioForText(m.text, m.ttsAudioBase64, m.audioMimeType, m.detectedLanguage, m.id)}
                             >
-                              <Icon name={spkMuted ? 'speakeroff' : 'speaker'} size={16} />
+                              <Icon name={playingMsgId === m.id && !paused ? 'pause' : 'play'} size={14} />
+                              <span>{playingMsgId === m.id && !paused ? 'Pause' : playingMsgId === m.id && paused ? 'Resume' : 'Listen'}</span>
                             </button>
-                            <div
-                              className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10"
-                              role="progressbar"
-                              aria-valuenow={progress}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                              aria-label="Playback progress"
+                            <button
+                              type="button"
+                              className="btn btn-soft !py-1 !px-2.5 text-xs flex items-center gap-1"
+                              aria-label="Replay response from start"
+                              onClick={() => {
+                                if (ttsRef.current) {
+                                  ttsRef.current.pause();
+                                  ttsRef.current.currentTime = 0;
+                                  ttsRef.current = null;
+                                }
+                                playAudioForText(m.text, m.ttsAudioBase64, m.audioMimeType, m.detectedLanguage, m.id);
+                              }}
+                              title="Replay from start"
                             >
+                              <Icon name="replay" size={14} />
+                              <span>Replay</span>
+                            </button>
+                            {playingMsgId === m.id && (
                               <div
-                                className="h-full rounded-full bg-accent transition-all"
-                                style={{ width: `${progress}%` }}
-                              />
-                            </div>
+                                className="h-1.5 flex-1 max-w-[130px] overflow-hidden rounded-full bg-ink/10"
+                                role="progressbar"
+                                aria-valuenow={progress}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-label="Playback progress"
+                              >
+                                <div
+                                  className="h-full rounded-full bg-accent transition-all duration-150"
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                            )}
                           </div>
                         )}
                       </>
@@ -1167,13 +1361,28 @@ export default function Conversation() {
                       user_id: userId,
                       detected_language: 'en',
                       conversation_style: STYLE_MAP[style],
-                      synthesize_speech: false,
+                      synthesize_speech: true,
                     }).then((convRes) => {
                       if (convRes.error && !convRes.response) throw new Error(convRes.error);
+                      const lastMsgId = Date.now() + 1;
                       setMsgs((m) => [
                         ...m,
-                        { id: Date.now() + 1, role: 'ai', text: convRes.response, detectedLanguage: convRes.response_language },
+                        {
+                          id: lastMsgId,
+                          role: 'ai',
+                          text: convRes.response,
+                          detectedLanguage: convRes.response_language,
+                          ttsAudioBase64: convRes.tts_audio_base64,
+                          audioMimeType: convRes.audio_mime_type,
+                        },
                       ]);
+                      lastAudioDataRef.current = {
+                        base64: convRes.tts_audio_base64,
+                        mime: convRes.audio_mime_type,
+                        text: convRes.response,
+                        lang: convRes.response_language,
+                      };
+                      updateMoodFromTextOrEmotion(convRes.response, null);
                       if (convRes.conversation_id) setActiveConversationId(convRes.conversation_id);
                       setPhase('idle');
                     }).catch((err) => {

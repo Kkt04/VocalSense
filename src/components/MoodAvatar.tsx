@@ -24,28 +24,28 @@ export function analyzeMood(text: string): MoodType | null {
 
   const rules: { mood: MoodType; regex: RegExp }[] = [
     {
-      mood: 'happy',
-      regex: /\b(happy|happiness|joy|joyful|great|excited|exciting|smile|smiling|yay|haha|hehe|lol|love|loved|loving|awesome|amazing|wonderful|glad|cheerful|delighted|pleased|proud|celebrate|celebrating|blessed|fantastic|fun|sweet|superb|brilliant|khush|khushi|maza|mazedaar|badhiya|badiya|mast|achha|achhi|achhe|shandar|zabardast|rocking|delight)\b|\b(feeling good|feel good|so good|feeling happy|felt great)\b/i,
+      mood: 'sad',
+      regex: /(break[\s\-]?up|broke[\s\-]?up|heartbreak|sad|unhappy|depress|crying|cry|cried|tears?|sorrow|lonely|down|gloomy|gloom|grief|hurt|pain|upset|disappoint|hopeless|miserable|udaas|udas|dukh|dukhi|dard|rona|ro[\s\-]?raha|ro[\s\-]?rahi|ro[\s\-]?ko|tut|toot|akela|akeli|bura[\s\-]?lag|bura[\s\-]?feel|mushkil|takleef|relationship|rishta[\s\-]?toot|divorce|dhokha|chhod|chhor|chot|feel[\s\-]?low|feeling[\s\-]?low|heart[\s\-]?broken|dil[\s\-]?toot|dil[\s\-]?halka)/i,
     },
     {
-      mood: 'sad',
-      regex: /\b(sad|sadness|unhappy|depressed|depression|crying|cry|cried|tears|tear|heartbroken|sorrow|lonely|down|gloomy|gloom|grief|hurt|hurting|pain|painful|upset|disappointed|hopeless|miserable|weep|weeping|udaas|udas|dukh|dukhi|dard|rona|ro raha|ro rahi|tut gaya|toot gaya|akela|akeli|bura lag|broken)\b|\b(feeling low|feel low|felt sad|feel sad|feeling down|lost someone)\b/i,
+      mood: 'happy',
+      regex: /(happy|happiness|joy|joyful|great|excited|exciting|smile|smiling|yay|haha|hehe|lol|love|loved|loving|awesome|amazing|wonderful|glad|cheerful|delighted|pleased|proud|celebrate|celebrating|blessed|fantastic|khush|khushi|maza|mazedaar|badhiya|badiya|mast|achha|achhi|achhe|shandar|zabardast|rocking|delight|feeling[\s\-]?good|feel[\s\-]?good|so[\s\-]?good|felt[\s\-]?great|mubarak|congrat)/i,
     },
     {
       mood: 'angry',
-      regex: /\b(angry|anger|mad|furious|rage|irritated|irritating|irritat|annoyed|annoying|hate|hating|frustrated|frustrating|pissed|disgusted|disgust|gussa|gusse|bakwas|bekaar|chidh|nafrat|dimag kharab)\b|\b(so mad|very angry|fed up)\b/i,
+      regex: /(angry|anger|mad|furious|rage|irritat|annoy|hate|hating|frustrat|pissed|disgust|gussa|gusse|bakwas|bekaar|chidh|nafrat|dimag[\s\-]?kharab|fed[\s\-]?up)/i,
     },
     {
       mood: 'fearful',
-      regex: /\b(scared|scary|fear|fearful|afraid|terrified|anxious|anxiety|panic|panicking|nervous|worry|worried|worries|worrying|stress|stressed|stressful|tension|overwhelmed|horrified|dread|frightened|dar|darr|khauf|ghabrahat|ghabra|tension ho|scared of)\b/i,
+      regex: /(scared|scary|fear|fearful|afraid|terrified|anxious|anxiety|panic|panicking|nervous|worry|worried|worries|worrying|stress|stressed|stressful|tension|overwhelmed|horrified|dread|frightened|dar|darr|khauf|ghabrahat|ghabra|tension[\s\-]?ho)/i,
     },
     {
       mood: 'calm',
-      regex: /\b(calm|calming|peace|peaceful|relax|relaxed|relaxing|chill|chilling|serene|tranquil|soothing|soothe|rested|content|comfort|zen|sukoon|shanti|araam|aram|thanda|chain|khamosh)\b/i,
+      regex: /(calm|calming|peace|peaceful|relax|relaxed|relaxing|chill|chilling|serene|tranquil|soothing|soothe|rested|content|comfort|zen|sukoon|shanti|araam|aram|thanda|chain|khamosh)/i,
     },
     {
       mood: 'surprised',
-      regex: /\b(surprised|surprising|shocked|shocking|shock|wow|whoa|omg|unexpected|amazed|astonished|unbelievable|hairan|chauk|chouka)\b/i,
+      regex: /(surprised|surprising|shocked|shocking|shock|wow|whoa|omg|unexpected|amazed|astonished|unbelievable|hairan|chauk|chouka)/i,
     },
   ];
 
